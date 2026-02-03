@@ -1,0 +1,367 @@
+// Investor Analyst Terminal - Prisma Schema
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// AUTH & USER
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  watchlists    Watchlist[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============================================================================
+// WATCHLIST
+// ============================================================================
+
+model Watchlist {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  companyId String   @map("company_id")
+  addedAt   DateTime @default(now()) @map("added_at")
+  notes     String?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@map("watchlists")
+}
+
+// ============================================================================
+// COMPANY
+// ============================================================================
+
+model Company {
+  id          String   @id @default(uuid())
+  ticker      String   @unique
+  cik         String?  @unique // SEC CIK number (10 digits, zero-padded)
+  name        String
+  exchange    String?  // NYSE, NASDAQ, etc.
+  sector      String?
+  industry    String?
+  description String?
+  website     String?
+  country     String?  @default("US")
+  currency    String   @default("USD")
+
+  // Data quality tracking
+  lastSecFiling     DateTime? @map("last_sec_filing")
+  lastPriceUpdate   DateTime? @map("last_price_update")
+  dataQualityScore  Float?    @map("data_quality_score") // 0-1
+  dataQualityNotes  String?   @map("data_quality_notes")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  watchlists          Watchlist[]
+  rawDocuments        RawSourceDocument[]
+  financialStatements FinancialStatementAnnual[]
+  prices              PriceDaily[]
+  metrics             MetricsAnnual[]
+  recommendations     RecommendationDaily[]
+
+  @@map("companies")
+}
+
+// ============================================================================
+// RAW DATA STORAGE
+// ============================================================================
+
+model RawSourceDocument {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  provider    String   // "sec_edgar", "fmp", "stooq", etc.
+  documentType String  @map("document_type") // "10-K", "company_facts", "price_history"
+  url         String
+  urlHash     String   @map("url_hash") // For deduplication
+  fetchedAt   DateTime @map("fetched_at")
+  payload     Json     // Raw JSON response
+
+  // Metadata
+  fiscalYear  Int?     @map("fiscal_year")
+  periodStart DateTime? @map("period_start")
+  periodEnd   DateTime? @map("period_end")
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, urlHash])
+  @@index([companyId, provider])
+  @@index([provider, fetchedAt])
+  @@map("raw_source_documents")
+}
+
+// ============================================================================
+// NORMALIZED FINANCIAL DATA
+// ============================================================================
+
+model FinancialStatementAnnual {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  fiscalYear  Int      @map("fiscal_year")
+  periodEnd   DateTime @map("period_end")
+
+  // Income Statement
+  revenue         Decimal? @db.Decimal(20, 2)
+  costOfRevenue   Decimal? @map("cost_of_revenue") @db.Decimal(20, 2)
+  grossProfit     Decimal? @map("gross_profit") @db.Decimal(20, 2)
+  operatingExpenses Decimal? @map("operating_expenses") @db.Decimal(20, 2)
+  operatingIncome Decimal? @map("operating_income") @db.Decimal(20, 2)
+  interestExpense Decimal? @map("interest_expense") @db.Decimal(20, 2)
+  netIncome       Decimal? @map("net_income") @db.Decimal(20, 2)
+
+  // Per Share
+  sharesOutstanding    Decimal? @map("shares_outstanding") @db.Decimal(20, 0)
+  sharesOutstandingDiluted Decimal? @map("shares_outstanding_diluted") @db.Decimal(20, 0)
+  eps                  Decimal? @db.Decimal(10, 4)
+  epsDiluted           Decimal? @map("eps_diluted") @db.Decimal(10, 4)
+  dividendPerShare     Decimal? @map("dividend_per_share") @db.Decimal(10, 4)
+
+  // Balance Sheet - Assets
+  totalAssets      Decimal? @map("total_assets") @db.Decimal(20, 2)
+  currentAssets    Decimal? @map("current_assets") @db.Decimal(20, 2)
+  cash             Decimal? @db.Decimal(20, 2)
+  shortTermInvestments Decimal? @map("short_term_investments") @db.Decimal(20, 2)
+  receivables      Decimal? @db.Decimal(20, 2)
+  inventory        Decimal? @db.Decimal(20, 2)
+  propertyPlantEquipment Decimal? @map("property_plant_equipment") @db.Decimal(20, 2)
+  goodwill         Decimal? @db.Decimal(20, 2)
+  intangibleAssets Decimal? @map("intangible_assets") @db.Decimal(20, 2)
+
+  // Balance Sheet - Liabilities
+  totalLiabilities   Decimal? @map("total_liabilities") @db.Decimal(20, 2)
+  currentLiabilities Decimal? @map("current_liabilities") @db.Decimal(20, 2)
+  accountsPayable    Decimal? @map("accounts_payable") @db.Decimal(20, 2)
+  shortTermDebt      Decimal? @map("short_term_debt") @db.Decimal(20, 2)
+  longTermDebt       Decimal? @map("long_term_debt") @db.Decimal(20, 2)
+  totalDebt          Decimal? @map("total_debt") @db.Decimal(20, 2)
+
+  // Balance Sheet - Equity
+  totalEquity        Decimal? @map("total_equity") @db.Decimal(20, 2)
+  retainedEarnings   Decimal? @map("retained_earnings") @db.Decimal(20, 2)
+
+  // Cash Flow Statement
+  operatingCashFlow  Decimal? @map("operating_cash_flow") @db.Decimal(20, 2)
+  capitalExpenditure Decimal? @map("capital_expenditure") @db.Decimal(20, 2)
+  freeCashFlow       Decimal? @map("free_cash_flow") @db.Decimal(20, 2)
+  dividendsPaid      Decimal? @map("dividends_paid") @db.Decimal(20, 2)
+  shareRepurchases   Decimal? @map("share_repurchases") @db.Decimal(20, 2)
+
+  // Data Quality
+  dataSource       String   @map("data_source") // "sec_xbrl", "fmp", "manual"
+  dataQuality      String?  @map("data_quality") // "complete", "partial", "estimated"
+  missingFields    String[] @map("missing_fields")
+  unmappedTags     Json?    @map("unmapped_tags") // Original XBRL tags not mapped
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, fiscalYear])
+  @@index([companyId, fiscalYear])
+  @@map("financial_statements_annual")
+}
+
+// ============================================================================
+// PRICE DATA
+// ============================================================================
+
+model PriceDaily {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  date      DateTime @db.Date
+
+  open      Decimal? @db.Decimal(12, 4)
+  high      Decimal? @db.Decimal(12, 4)
+  low       Decimal? @db.Decimal(12, 4)
+  close     Decimal  @db.Decimal(12, 4)
+  adjClose  Decimal? @map("adj_close") @db.Decimal(12, 4)
+  volume    BigInt?
+
+  dataSource String  @map("data_source") // "fmp", "stooq", "alpha_vantage"
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, date])
+  @@index([companyId, date])
+  @@map("prices_daily")
+}
+
+// ============================================================================
+// CALCULATED METRICS
+// ============================================================================
+
+model MetricsAnnual {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  fiscalYear  Int      @map("fiscal_year")
+
+  // Profitability
+  grossMargin      Decimal? @map("gross_margin") @db.Decimal(8, 4) // As decimal (0.25 = 25%)
+  operatingMargin  Decimal? @map("operating_margin") @db.Decimal(8, 4)
+  netMargin        Decimal? @map("net_margin") @db.Decimal(8, 4)
+
+  // Returns
+  roe              Decimal? @db.Decimal(8, 4) // Return on Equity
+  roa              Decimal? @db.Decimal(8, 4) // Return on Assets
+  roic             Decimal? @db.Decimal(8, 4) // Return on Invested Capital
+  roce             Decimal? @db.Decimal(8, 4) // Return on Capital Employed
+
+  // Cash Flow
+  fcfMargin        Decimal? @map("fcf_margin") @db.Decimal(8, 4)
+  fcfYield         Decimal? @map("fcf_yield") @db.Decimal(8, 4)
+  fcfPerShare      Decimal? @map("fcf_per_share") @db.Decimal(12, 4)
+
+  // Leverage & Liquidity
+  debtToEquity     Decimal? @map("debt_to_equity") @db.Decimal(8, 4)
+  debtToEbitda     Decimal? @map("debt_to_ebitda") @db.Decimal(8, 4)
+  debtToFcf        Decimal? @map("debt_to_fcf") @db.Decimal(8, 4)
+  currentRatio     Decimal? @map("current_ratio") @db.Decimal(8, 4)
+  quickRatio       Decimal? @map("quick_ratio") @db.Decimal(8, 4)
+  interestCoverage Decimal? @map("interest_coverage") @db.Decimal(8, 4)
+
+  // Valuation (requires price data)
+  marketCap        Decimal? @map("market_cap") @db.Decimal(20, 2)
+  enterpriseValue  Decimal? @map("enterprise_value") @db.Decimal(20, 2)
+  peRatio          Decimal? @map("pe_ratio") @db.Decimal(10, 4)
+  pbRatio          Decimal? @map("pb_ratio") @db.Decimal(10, 4)
+  psRatio          Decimal? @map("ps_ratio") @db.Decimal(10, 4)
+  evToEbitda       Decimal? @map("ev_to_ebitda") @db.Decimal(10, 4)
+  evToFcf          Decimal? @map("ev_to_fcf") @db.Decimal(10, 4)
+  earningsYield    Decimal? @map("earnings_yield") @db.Decimal(8, 4)
+  fcfYieldOnEv     Decimal? @map("fcf_yield_on_ev") @db.Decimal(8, 4)
+
+  // Growth (YoY)
+  revenueGrowth    Decimal? @map("revenue_growth") @db.Decimal(8, 4)
+  epsGrowth        Decimal? @map("eps_growth") @db.Decimal(8, 4)
+  fcfGrowth        Decimal? @map("fcf_growth") @db.Decimal(8, 4)
+
+  // Greenblatt Magic Formula components
+  earningsYieldMF  Decimal? @map("earnings_yield_mf") @db.Decimal(8, 4) // EBIT/EV
+  returnOnCapitalMF Decimal? @map("return_on_capital_mf") @db.Decimal(8, 4) // EBIT/(Net Working Capital + Net Fixed Assets)
+
+  // Quality Score (composite)
+  qualityScore     Decimal? @map("quality_score") @db.Decimal(5, 4) // 0-1
+
+  // Metadata
+  calculatedAt     DateTime @default(now()) @map("calculated_at")
+  priceDate        DateTime? @map("price_date") // Date of price used for valuation metrics
+  dataCompleteness Decimal? @map("data_completeness") @db.Decimal(5, 4) // 0-1, what % of fields calculated
+
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, fiscalYear])
+  @@index([companyId, fiscalYear])
+  @@map("metrics_annual")
+}
+
+// ============================================================================
+// RECOMMENDATIONS
+// ============================================================================
+
+enum Rating {
+  BUY
+  HOLD
+  SELL
+}
+
+model RecommendationDaily {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  date        DateTime @db.Date
+
+  // Final recommendation
+  rating      Rating
+  confidence  Decimal  @db.Decimal(5, 4) // 0-1
+
+  // Individual model votes
+  modelVotes  Json     @map("model_votes")
+  // Structure: {
+  //   buffett: { rating: "BUY", confidence: 0.8, reasons: [...] },
+  //   greenblatt: { rating: "HOLD", confidence: 0.6, reasons: [...] },
+  //   growth: { rating: "BUY", confidence: 0.7, reasons: [...] }
+  // }
+
+  // Explanation
+  explanationShort String  @map("explanation_short") // One-liner
+  explanationFull  String  @map("explanation_full")  // Markdown, detailed
+
+  // What would change the recommendation
+  triggers    Json?    // Array of conditions that would flip the rating
+
+  // Price context
+  priceAtRec  Decimal  @map("price_at_rec") @db.Decimal(12, 4)
+
+  // Metadata
+  metricsYear Int      @map("metrics_year") // Which fiscal year's metrics were used
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, date])
+  @@index([companyId, date])
+  @@index([date])
+  @@map("recommendations_daily")
+}
+
+// ============================================================================
+// SYSTEM / JOBS
+// ============================================================================
+
+model JobRun {
+  id          String   @id @default(uuid())
+  jobType     String   @map("job_type") // "daily_update", "fetch_sec", "calc_metrics"
+  status      String   // "running", "completed", "failed"
+  startedAt   DateTime @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  // Results
+  companiesProcessed Int?    @map("companies_processed")
+  errors             Json?   // Array of error messages
+  summary            String?
+
+  @@index([jobType, startedAt])
+  @@map("job_runs")
+}
+
+model CacheEntry {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  expiresAt   DateTime @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("cache_entries")
+}
