@@ -323,6 +323,16 @@ model RecommendationDaily {
   // Price context
   priceAtRec  Decimal  @map("price_at_rec") @db.Decimal(12, 4)
 
+  // LLM-generated detailed analysis per model
+  llmAnalysis Json?    @map("llm_analysis")
+  // Structure: {
+  //   buffett: "markdown analysis...",
+  //   greenblatt: "markdown analysis...",
+  //   growth: "markdown analysis...",
+  //   lynch: "markdown analysis...",
+  //   generatedAt: "2024-01-15T..."
+  // }
+
   // Metadata
   metricsYear Int      @map("metrics_year") // Which fiscal year's metrics were used
   createdAt   DateTime @default(now()) @map("created_at")
