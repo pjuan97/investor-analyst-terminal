@@ -78,7 +78,7 @@ export function CompanyTabs({
           <MetricsTab metrics={metrics} prices={prices} />
         )}
         {activeTab === 'models' && (
-          <ModelsTab recommendation={latestRec} />
+          <ModelsTab recommendation={latestRec} ticker={company.ticker} />
         )}
       </div>
     </div>

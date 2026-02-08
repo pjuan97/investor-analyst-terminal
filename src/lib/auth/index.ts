@@ -110,8 +110,8 @@ export async function getSession(): Promise<TokenPayload | null> {
   });
 
   if (!session || session.expiresAt < new Date()) {
-    // Session expired or not found
-    await destroySession();
+    // Session expired or not found - just return null
+    // Cookie cleanup happens via logout route handler
     return null;
   }
 
