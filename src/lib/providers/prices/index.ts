@@ -1,12 +1,13 @@
 import { PriceData, ProviderResponse } from '@/types';
 import { PriceDataProvider } from '@/types/providers';
 import { StooqProvider, getStooqProvider } from './stooq';
+import { YahooFinanceProvider, getYahooFinanceProvider } from './yahoo';
 
 // ============================================================================
 // PRICE PROVIDER FACTORY
 // ============================================================================
 
-export type PriceProviderType = 'stooq' | 'fmp' | 'alpha_vantage';
+export type PriceProviderType = 'stooq' | 'fmp' | 'alpha_vantage' | 'yahoo';
 
 /**
  * Get the configured price provider.
@@ -19,6 +20,9 @@ export function getPriceProvider(
   const providerType = type || (process.env.PRICE_PROVIDER as PriceProviderType) || 'stooq';
 
   switch (providerType) {
+    case 'yahoo':
+      return getYahooFinanceProvider();
+
     case 'stooq':
       return getStooqProvider();
 
@@ -47,3 +51,4 @@ export function getPriceProvider(
 
 // Re-export for convenience
 export { StooqProvider, getStooqProvider };
+export { YahooFinanceProvider, getYahooFinanceProvider };

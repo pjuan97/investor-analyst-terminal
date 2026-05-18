@@ -4,7 +4,7 @@ const nextConfig = {
   reactStrictMode: true,
 
   // Configure external packages that should not be bundled
-  serverExternalPackages: ['@prisma/client', 'bcryptjs'],
+  serverExternalPackages: ['@prisma/client', 'bcryptjs', 'yahoo-finance2'],
 
   // Environment variables that should be available on the client
   env: {

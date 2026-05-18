@@ -205,7 +205,7 @@ export async function POST(
             close: price.close,
             adjClose: price.adjClose,
             volume: price.volume ? BigInt(price.volume) : null,
-            dataSource: 'stooq',
+            dataSource: providers.prices.name,
           },
           create: {
             companyId: company.id,
@@ -216,7 +216,7 @@ export async function POST(
             close: price.close,
             adjClose: price.adjClose,
             volume: price.volume ? BigInt(price.volume) : null,
-            dataSource: 'stooq',
+            dataSource: providers.prices.name,
           },
         });
       }

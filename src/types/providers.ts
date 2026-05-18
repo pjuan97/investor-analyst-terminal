@@ -226,10 +226,10 @@ export interface ProviderConfig {
     rateLimit: number;
   };
   prices: {
-    provider: 'fmp' | 'stooq' | 'alpha_vantage';
+    provider: 'fmp' | 'stooq' | 'alpha_vantage' | 'yahoo';
     apiKey?: string;
     rateLimit: number;
   };
 }
 
-export type ProviderType = 'sec' | 'fmp' | 'stooq' | 'alpha_vantage';
+export type ProviderType = 'sec' | 'fmp' | 'stooq' | 'alpha_vantage' | 'yahoo';

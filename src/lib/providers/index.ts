@@ -164,6 +164,6 @@ export async function checkProvidersHealth(): Promise<{
 
 // Re-export providers
 export { getSecProvider, SecEdgarProvider } from './sec';
-export { getPriceProvider, getStooqProvider } from './prices';
+export { getPriceProvider, getStooqProvider, getYahooFinanceProvider } from './prices';
 export { getFmpProvider } from './fmp';
 export * from './base';

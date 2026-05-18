@@ -38,7 +38,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
       },
       prices: {
         orderBy: { date: 'desc' },
-        take: 252, // ~1 year of trading days
+        take: 2520, // ~10 years of trading days
       },
       recommendations: {
         orderBy: { date: 'desc' },
