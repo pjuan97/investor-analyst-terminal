@@ -1,5 +1,6 @@
 import { FinancialStatementData } from '@/types';
 import { SecCompanyFactsResponse, SecFactValue } from '@/types/providers';
+import { fillDerivedFields } from '../derived';
 
 // ============================================================================
 // XBRL TAG MAPPING
@@ -12,10 +13,11 @@ import { SecCompanyFactsResponse, SecFactValue } from '@/types/providers';
 export const XBRL_TAG_MAPPING: Record<string, string[]> = {
   // Income Statement
   revenue: [
-    'RevenueFromContractWithCustomerExcludingAssessedTax',
     'Revenues',
     'SalesRevenueNet',
+    'RevenueFromContractWithCustomerExcludingAssessedTax',
     'RevenueFromContractWithCustomerIncludingAssessedTax',
+    'TotalRevenues',
     'SalesRevenueGoodsNet',
     'SalesRevenueServicesNet',
     'TotalRevenuesAndOtherIncome',
@@ -197,6 +199,17 @@ export function mapXbrlToFinancials(
   // Track which of our fields were found
   const foundFields = new Set<string>();
 
+  // Fields that represent costs/expenses and must always be stored as positive values.
+  // SEC XBRL sometimes reports these with inconsistent signs.
+  const ALWAYS_POSITIVE_FIELDS = new Set([
+    'costOfRevenue',
+    'operatingExpenses',
+    'capitalExpenditure',
+    'interestExpense',
+    'dividendsPaid',
+    'shareRepurchases',
+  ]);
+
   // Map each of our normalized fields
   for (const [fieldName, possibleTags] of Object.entries(XBRL_TAG_MAPPING)) {
     let tagFound = false;
@@ -230,7 +243,10 @@ export function mapXbrlToFinancials(
 
         // Only set if not already set (first matching tag wins)
         if ((yearData as Record<string, unknown>)[fieldName] === undefined) {
-          (yearData as Record<string, unknown>)[fieldName] = value.val;
+          const normalizedVal = ALWAYS_POSITIVE_FIELDS.has(fieldName)
+            ? Math.abs(value.val)
+            : value.val;
+          (yearData as Record<string, unknown>)[fieldName] = normalizedVal;
           foundFields.add(fieldName);
 
           // Update period end date if available
@@ -324,9 +340,10 @@ export function mapXbrlToFinancials(
     );
   }
 
-  // Convert to array and sort by year descending
+  // Convert to array, apply derived fields, and sort by year descending
   const financials = Array.from(financialsByYear.values())
-    .sort((a, b) => b.fiscalYear! - a.fiscalYear!) as FinancialStatementData[];
+    .map((yearData) => fillDerivedFields(yearData as FinancialStatementData))
+    .sort((a, b) => b.fiscalYear - a.fiscalYear);
 
   return { financials, warnings, unmappedTags };
 }

@@ -1,6 +1,9 @@
 import { getSecProvider, SecEdgarProvider } from './sec';
 import { getPriceProvider, PriceProviderType } from './prices';
+import { getFmpProvider, FmpProvider } from './fmp';
 import { CompanyInfoProvider, FinancialDataProvider, PriceDataProvider } from '@/types/providers';
+import { FinancialStatementData, ProviderResponse } from '@/types';
+import { fillDerivedFields } from './derived';
 
 // ============================================================================
 // PROVIDER FACTORY
@@ -13,25 +16,123 @@ export interface Providers {
 }
 
 /**
+ * Combined FMP + SEC provider: fetches from both in parallel,
+ * merges results prioritizing FMP where years overlap.
+ *
+ * - FMP: last 5 years (plan limit), complete data
+ * - SEC: up to 15 years, may have gaps
+ * - Overlap years: FMP wins (better data quality)
+ */
+class CombinedFinancialProvider implements FinancialDataProvider {
+  readonly name = 'fmp+sec_combined';
+  private fmp: FmpProvider;
+  private sec: FinancialDataProvider;
+
+  constructor(fmp: FmpProvider, sec: FinancialDataProvider) {
+    this.fmp = fmp;
+    this.sec = sec;
+  }
+
+  get isAvailable(): boolean {
+    return this.fmp.isAvailable;
+  }
+
+  async healthCheck(): Promise<boolean> {
+    const [fmpHealth, secHealth] = await Promise.all([
+      this.fmp.healthCheck(),
+      this.sec.healthCheck(),
+    ]);
+    return fmpHealth || secHealth;
+  }
+
+  async getAnnualFinancials(
+    ticker: string,
+    _years?: number
+  ): Promise<ProviderResponse<FinancialStatementData[]>> {
+    // Fetch from both providers in parallel
+    const [fmpResult, secResult] = await Promise.all([
+      this.fmp.getAnnualFinancials(ticker, 5).catch(() => null),
+      this.sec.getAnnualFinancials(ticker, 15).catch(() => null),
+    ]);
+
+    const fmpSuccess = fmpResult?.success && fmpResult.data && fmpResult.data.length > 0;
+    const secSuccess = secResult?.success && secResult.data && secResult.data.length > 0;
+
+    // If both fail, return error
+    if (!fmpSuccess && !secSuccess) {
+      const error = fmpResult?.error || secResult?.error || 'Both FMP and SEC failed';
+      return { success: false, data: null, error };
+    }
+
+    // If only SEC succeeded
+    if (!fmpSuccess && secSuccess) {
+      return {
+        success: true,
+        data: secResult!.data!.map(fillDerivedFields),
+        warnings: [`FMP unavailable (${fmpResult?.error}), using SEC only`],
+      };
+    }
+
+    // If only FMP succeeded
+    if (fmpSuccess && !secSuccess) {
+      return {
+        success: true,
+        data: fmpResult!.data!.map(fillDerivedFields),
+        warnings: [`SEC unavailable (${secResult?.error}), using FMP only`],
+      };
+    }
+
+    // Both succeeded — combine with FMP priority
+    const combined = new Map<number, FinancialStatementData>();
+
+    // Insert all SEC years first
+    for (const statement of secResult!.data!) {
+      combined.set(statement.fiscalYear, statement);
+    }
+
+    // Overwrite with FMP years (FMP has priority)
+    for (const statement of fmpResult!.data!) {
+      combined.set(statement.fiscalYear, statement);
+    }
+
+    // Apply derived fields and sort descending
+    const mergedStatements = Array.from(combined.values())
+      .map(fillDerivedFields)
+      .sort((a, b) => b.fiscalYear - a.fiscalYear);
+
+    const fmpYears = fmpResult!.data!.length;
+    const secOnlyYears = mergedStatements.length - fmpYears;
+
+    return {
+      success: true,
+      data: mergedStatements,
+      warnings: secOnlyYears > 0
+        ? [`Combined: ${fmpYears} years from FMP + ${secOnlyYears} years from SEC`]
+        : undefined,
+      rawDocument: fmpResult!.rawDocument,
+    };
+  }
+}
+
+/**
  * Get all configured providers.
  * This is the main entry point for accessing data providers.
+ *
+ * If FMP_API_KEY is set, uses CombinedFinancialProvider (FMP + SEC in parallel).
+ * Otherwise uses SEC EDGAR directly.
  */
 export function getProviders(): Providers {
   const secProvider = getSecProvider();
   const priceProvider = getPriceProvider();
+  const fmpProvider = getFmpProvider();
 
-  // Check if FMP is available for better financial data
-  const hasFmp = !!process.env.FMP_API_KEY;
-
-  if (hasFmp) {
-    // TODO: When FMP provider is implemented, use it for financials
-    // For now, fall back to SEC
-    console.log('FMP API key detected - would use FMP for financials (not yet implemented)');
-  }
+  const financialsProvider = fmpProvider
+    ? new CombinedFinancialProvider(fmpProvider, secProvider)
+    : secProvider;
 
   return {
     companyInfo: secProvider,
-    financials: secProvider, // Can be swapped for FMP when available
+    financials: financialsProvider,
     prices: priceProvider,
   };
 }
@@ -44,21 +145,25 @@ export async function checkProvidersHealth(): Promise<{
   prices: boolean;
   fmp: boolean;
 }> {
-  const providers = getProviders();
+  const secProvider = getSecProvider();
+  const priceProvider = getPriceProvider();
+  const fmpProvider = getFmpProvider();
 
-  const [secHealth, pricesHealth] = await Promise.all([
-    providers.companyInfo.healthCheck(),
-    providers.prices.healthCheck(),
+  const [secHealth, pricesHealth, fmpHealth] = await Promise.all([
+    secProvider.healthCheck(),
+    priceProvider.healthCheck(),
+    fmpProvider ? fmpProvider.healthCheck() : Promise.resolve(false),
   ]);
 
   return {
     sec: secHealth,
     prices: pricesHealth,
-    fmp: false, // Not implemented yet
+    fmp: fmpHealth,
   };
 }
 
 // Re-export providers
 export { getSecProvider, SecEdgarProvider } from './sec';
 export { getPriceProvider, getStooqProvider } from './prices';
+export { getFmpProvider } from './fmp';
 export * from './base';

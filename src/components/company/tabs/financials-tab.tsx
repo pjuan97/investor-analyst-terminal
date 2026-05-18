@@ -57,10 +57,7 @@ export function FinancialsTab({ financials }: FinancialsTabProps) {
       </div>
 
       {/* Data Quality Notice */}
-      <div className="text-xs text-terminal-muted">
-        Data source: {sortedData[0]?.dataSource || 'Unknown'} |
-        Quality: {sortedData[0]?.dataQuality || 'Unknown'}
-      </div>
+      <DataSourceSummary financials={sortedData} />
     </div>
   );
 }
@@ -143,6 +140,51 @@ function CashFlowTable({ data }: { data: FinancialStatementAnnual[] }) {
   ];
 
   return <FinancialTable data={data} rows={rows} />;
+}
+
+function DataSourceSummary({ financials }: { financials: FinancialStatementAnnual[] }) {
+  if (financials.length === 0) return null;
+
+  const groups = new Map<string, { count: number; qualities: string[] }>();
+
+  for (const f of financials) {
+    const source = f.dataSource || 'unknown';
+    const existing = groups.get(source) || { count: 0, qualities: [] };
+    existing.count++;
+    if (f.dataQuality) existing.qualities.push(f.dataQuality);
+    groups.set(source, existing);
+  }
+
+  const sourceLabels: Record<string, string> = {
+    fmp: 'FMP',
+    sec_xbrl: 'SEC EDGAR',
+  };
+
+  const parts: string[] = [];
+  for (const [source, { count, qualities }] of groups) {
+    const label = sourceLabels[source] || source;
+    // Find predominant quality
+    const qualityCounts = new Map<string, number>();
+    for (const q of qualities) {
+      qualityCounts.set(q, (qualityCounts.get(q) || 0) + 1);
+    }
+    let predominant = 'unknown';
+    let maxCount = 0;
+    for (const [q, c] of qualityCounts) {
+      if (c > maxCount) {
+        predominant = q;
+        maxCount = c;
+      }
+    }
+    const yearLabel = count === 1 ? 'year' : 'years';
+    parts.push(`${label} (${count} ${yearLabel}, ${predominant})`);
+  }
+
+  return (
+    <div className="text-xs text-terminal-muted">
+      Sources: {parts.join(' · ')}
+    </div>
+  );
 }
 
 function FinancialTable({
