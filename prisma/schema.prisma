@@ -90,8 +90,51 @@ model Company {
   prices              PriceDaily[]
   metrics             MetricsAnnual[]
   recommendations     RecommendationDaily[]
+  quarterlyReports    QuarterlyReport[]
 
   @@map("companies")
+}
+
+// ============================================================================
+// QUARTERLY REPORTS (10-Q)
+// ============================================================================
+
+model QuarterlyReport {
+  id              String   @id @default(uuid())
+  companyId       String   @map("company_id")
+  filingDate      DateTime @map("filing_date")
+  periodEnd       DateTime @map("period_end")
+  fiscalYear      Int      @map("fiscal_year")
+  fiscalQuarter   Int      @map("fiscal_quarter") // 1, 2, 3
+  formType        String   @map("form_type")
+  accessionNumber String   @map("accession_number")
+
+  // Quantitative — quarterly figures (not annualized)
+  revenue           Decimal? @db.Decimal(20, 2)
+  grossProfit       Decimal? @map("gross_profit") @db.Decimal(20, 2)
+  operatingIncome   Decimal? @map("operating_income") @db.Decimal(20, 2)
+  netIncome         Decimal? @map("net_income") @db.Decimal(20, 2)
+  eps               Decimal? @db.Decimal(10, 4)
+  operatingCashFlow Decimal? @map("operating_cash_flow") @db.Decimal(20, 2)
+  freeCashFlow      Decimal? @map("free_cash_flow") @db.Decimal(20, 2)
+  totalDebt         Decimal? @map("total_debt") @db.Decimal(20, 2)
+  cash              Decimal? @db.Decimal(20, 2)
+
+  // Qualitative — extracted text sections
+  mdaText     String? @map("mda_text") @db.Text
+  mdaSummary  String? @map("mda_summary") @db.Text
+  segmentInfo String? @map("segment_info") @db.Text
+  riskFactors String? @map("risk_factors") @db.Text
+
+  // Metadata
+  fetchedAt  DateTime @map("fetched_at")
+  dataSource String   @map("data_source") @default("sec_edgar")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, accessionNumber])
+  @@index([companyId, fiscalYear, fiscalQuarter])
+  @@map("quarterly_reports")
 }
 
 // ============================================================================

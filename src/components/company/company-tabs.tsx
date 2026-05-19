@@ -6,6 +6,7 @@ import type {
   FinancialStatementAnnual,
   MetricsAnnual,
   PriceDaily,
+  QuarterlyReport,
   RecommendationDaily,
 } from '@prisma/client';
 import { OverviewTab } from './tabs/overview-tab';
@@ -21,6 +22,7 @@ interface CompanyTabsProps {
   metrics: MetricsAnnual[];
   prices: PriceDaily[];
   recommendations: RecommendationDaily[];
+  latestQuarterly: QuarterlyReport | null;
 }
 
 const tabs: { id: TabType; label: string }[] = [
@@ -36,6 +38,7 @@ export function CompanyTabs({
   metrics,
   prices,
   recommendations,
+  latestQuarterly,
 }: CompanyTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
@@ -72,7 +75,11 @@ export function CompanyTabs({
           />
         )}
         {activeTab === 'financials' && (
-          <FinancialsTab financials={financials} />
+          <FinancialsTab
+            financials={financials}
+            ticker={company.ticker}
+            latestQuarterly={latestQuarterly}
+          />
         )}
         {activeTab === 'metrics' && (
           <MetricsTab metrics={metrics} prices={prices} />

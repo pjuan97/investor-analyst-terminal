@@ -195,6 +195,31 @@ export async function POST(
       data: yearData,
     };
 
+    // Fetch latest quarterly report for MD&A context
+    const latestQuarterly = await prisma.quarterlyReport.findFirst({
+      where: { companyId: company.id },
+      orderBy: [{ fiscalYear: 'desc' }, { fiscalQuarter: 'desc' }],
+    });
+
+    let quarterlyContext = '';
+    if (latestQuarterly?.mdaText) {
+      const qNum = latestQuarterly.fiscalQuarter;
+      const qYear = latestQuarterly.fiscalYear;
+      const filedDate = new Date(latestQuarterly.filingDate).toISOString().split('T')[0];
+
+      const numberLines: string[] = [];
+      if (latestQuarterly.revenue) numberLines.push(`Revenue: ${Number(latestQuarterly.revenue).toLocaleString()}`);
+      if (latestQuarterly.netIncome) numberLines.push(`Net Income: ${Number(latestQuarterly.netIncome).toLocaleString()}`);
+      if (latestQuarterly.eps) numberLines.push(`EPS: ${Number(latestQuarterly.eps).toFixed(2)}`);
+      if (latestQuarterly.freeCashFlow) numberLines.push(`FCF: ${Number(latestQuarterly.freeCashFlow).toLocaleString()}`);
+
+      quarterlyContext = `\n\n=== LATEST QUARTERLY REPORT (10-Q) ===
+Period: Q${qNum} FY${qYear}, Filed: ${filedDate}
+${numberLines.length > 0 ? numberLines.join(' | ') + '\n' : ''}
+=== MANAGEMENT DISCUSSION & ANALYSIS (MD&A) ===
+${latestQuarterly.mdaText}`;
+    }
+
     // Run each model SEQUENTIALLY
     const deepAnalysis: DeepAnalysisRecord = {};
     const errors: string[] = [];
@@ -211,7 +236,11 @@ export async function POST(
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { system, user } = (promptBuilder as (p: any) => { system: string; user: string })(promptParams);
-        const analysis = await callClaude(system, user);
+        // Inject quarterly MD&A context before the analysis request
+        const userWithQuarterly = quarterlyContext
+          ? user.replace('=== ANALYSIS REQUEST ===', `${quarterlyContext}\n\n=== ANALYSIS REQUEST ===`)
+          : user;
+        const analysis = await callClaude(system, userWithQuarterly);
         deepAnalysis[modelId] = analysis;
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';

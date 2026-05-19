@@ -1,15 +1,18 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import type { FinancialStatementAnnual } from '@prisma/client';
+import type { FinancialStatementAnnual, QuarterlyReport } from '@prisma/client';
+import { QuarterlyReportSection } from '../QuarterlyReportSection';
 
 interface FinancialsTabProps {
   financials: FinancialStatementAnnual[];
+  ticker: string;
+  latestQuarterly: QuarterlyReport | null;
 }
 
 type Section = 'income' | 'balance' | 'cashflow';
 
-export function FinancialsTab({ financials }: FinancialsTabProps) {
+export function FinancialsTab({ financials, ticker, latestQuarterly }: FinancialsTabProps) {
   const [section, setSection] = useState<Section>('income');
 
   if (financials.length === 0) {
@@ -58,6 +61,12 @@ export function FinancialsTab({ financials }: FinancialsTabProps) {
 
       {/* Data Quality Notice */}
       <DataSourceSummary financials={sortedData} />
+
+      {/* Divider */}
+      <div className="border-t border-terminal-border my-6" />
+
+      {/* Quarterly 10-Q Section */}
+      <QuarterlyReportSection ticker={ticker} initialReport={latestQuarterly} />
     </div>
   );
 }

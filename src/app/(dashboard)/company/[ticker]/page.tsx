@@ -55,6 +55,12 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
     notFound();
   }
 
+  // Fetch latest quarterly report
+  const latestQuarterly = await prisma.quarterlyReport.findFirst({
+    where: { companyId: company.id },
+    orderBy: [{ fiscalYear: 'desc' }, { fiscalQuarter: 'desc' }],
+  });
+
   // Check if in user's watchlist
   const isInWatchlist = company.watchlists.length > 0;
 
@@ -90,6 +96,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
         metrics={serialize(company.metrics)}
         prices={serialize(company.prices)}
         recommendations={serialize(company.recommendations)}
+        latestQuarterly={latestQuarterly ? serialize(latestQuarterly) : null}
       />
     </div>
   );
