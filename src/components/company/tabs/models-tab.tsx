@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { RecommendationDaily } from '@prisma/client';
 import type { ModelVotes, ModelVote } from '@/types';
 
@@ -12,6 +13,22 @@ interface LLMAnalysis {
   lynch?: string;
   generatedAt?: string;
 }
+
+interface DeepAnalysis {
+  buffett?: string;
+  fisher?: string;
+  greenblatt?: string;
+  lynch?: string;
+  summary?: string;
+  generatedAt?: string;
+}
+
+const DEEP_MODELS = [
+  { id: 'buffett', name: 'Warren Buffett', icon: '🏛️' },
+  { id: 'fisher', name: 'Philip Fisher', icon: '📈' },
+  { id: 'greenblatt', name: 'Joel Greenblatt', icon: '🎯' },
+  { id: 'lynch', name: 'Peter Lynch', icon: '⚖️' },
+] as const;
 
 interface ModelsTabProps {
   recommendation: RecommendationDaily | null;
@@ -26,6 +43,16 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
   const [geminiConfigured, setGeminiConfigured] = useState(false);
   const [showAISection, setShowAISection] = useState(false);
 
+  // Deep Analysis state
+  const [deepAnalysis, setDeepAnalysis] = useState<DeepAnalysis | null>(null);
+  const [selectedDeepModels, setSelectedDeepModels] = useState<Set<string>>(new Set());
+  const [deepLoading, setDeepLoading] = useState(false);
+  const [currentDeepModel, setCurrentDeepModel] = useState<string | null>(null);
+  const [deepError, setDeepError] = useState<string | null>(null);
+  const [hurdleRate, setHurdleRate] = useState(10);
+  const [claudeConfigured, setClaudeConfigured] = useState(false);
+  const [expandedDeepModels, setExpandedDeepModels] = useState<Set<string>>(new Set());
+
   // Fetch existing analysis on mount
   useEffect(() => {
     if (!recommendation) return;
@@ -33,11 +60,21 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
     const fetchAnalysis = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/company/${ticker}/analysis`);
-        if (response.ok) {
-          const data = await response.json();
+        const [analysisRes, deepRes] = await Promise.all([
+          fetch(`/api/company/${ticker}/analysis`),
+          fetch(`/api/company/${ticker}/deep-analysis`),
+        ]);
+
+        if (analysisRes.ok) {
+          const data = await analysisRes.json();
           setLlmAnalysis(data.analysis);
           setGeminiConfigured(data.geminiConfigured);
+        }
+
+        if (deepRes.ok) {
+          const data = await deepRes.json();
+          setDeepAnalysis(data.deepAnalysis);
+          setClaudeConfigured(data.claudeConfigured);
         }
       } catch (err) {
         console.error('Failed to fetch analysis:', err);
@@ -79,6 +116,76 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
       setError(err instanceof Error ? err.message : 'Failed to generate analysis');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const toggleDeepModel = (id: string) => {
+    setSelectedDeepModels((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleDeepExpanded = (id: string) => {
+    setExpandedDeepModels((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleRunDeepAnalysis = async () => {
+    if (selectedDeepModels.size === 0) return;
+    setDeepLoading(true);
+    setDeepError(null);
+    setCurrentDeepModel(null);
+
+    const modelsToRun = Array.from(selectedDeepModels);
+
+    // Show progress for each model
+    for (const modelId of modelsToRun) {
+      setCurrentDeepModel(modelId);
+      // Small delay so the UI updates before the fetch blocks
+      await new Promise((r) => setTimeout(r, 50));
+    }
+
+    try {
+      setCurrentDeepModel(modelsToRun[0]);
+      const response = await fetch(`/api/company/${ticker}/deep-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          models: modelsToRun,
+          hurdleRate: hurdleRate / 100,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate deep analysis');
+      }
+
+      setDeepAnalysis(data.deepAnalysis);
+
+      // Auto-expand all completed models
+      const completed = new Set<string>();
+      for (const key of Object.keys(data.deepAnalysis || {})) {
+        if (key !== 'generatedAt') completed.add(key);
+      }
+      setExpandedDeepModels(completed);
+
+      if (data.errors?.length > 0) {
+        setDeepError(`Partial errors: ${data.errors.join('; ')}`);
+      }
+    } catch (err) {
+      setDeepError(err instanceof Error ? err.message : 'Failed to generate deep analysis');
+    } finally {
+      setDeepLoading(false);
+      setCurrentDeepModel(null);
     }
   };
 
@@ -195,93 +302,6 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
         ))}
       </div>
 
-      {/* AI Analysis Section (Collapsed by default) */}
-      <div className="card">
-        <button
-          onClick={() => setShowAISection(!showAISection)}
-          className="w-full flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">🤖</span>
-            <div className="text-left">
-              <h3 className="font-semibold text-terminal-text">AI-Enhanced Analysis</h3>
-              <p className="text-xs text-terminal-muted">
-                {hasAIContent
-                  ? `Generated ${new Date(llmAnalysis!.generatedAt!).toLocaleDateString()}`
-                  : 'Optional: Generate deeper insights using Gemini AI'}
-              </p>
-            </div>
-          </div>
-          <svg
-            className={`w-5 h-5 text-terminal-muted transition-transform ${showAISection ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        {showAISection && (
-          <div className="mt-4 pt-4 border-t border-terminal-border">
-            {hasAIContent ? (
-              <div className="space-y-4">
-                <p className="text-sm text-green-400 flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  AI analysis available - expand each model card above to view
-                </p>
-                <button
-                  onClick={handleGenerateAnalysis}
-                  disabled={isGenerating || !geminiConfigured}
-                  className="text-sm text-terminal-accent hover:underline disabled:opacity-50 disabled:no-underline"
-                >
-                  {isGenerating ? 'Regenerating...' : 'Regenerate Analysis'}
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-terminal-muted">
-                  The AI analysis adds narrative explanations to each model&apos;s findings,
-                  providing deeper context beyond the key metrics and bullet points shown above.
-                </p>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleGenerateAnalysis}
-                    disabled={isGenerating || !geminiConfigured}
-                    className={`px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 ${
-                      isGenerating || !geminiConfigured
-                        ? 'bg-terminal-muted/20 text-terminal-muted cursor-not-allowed'
-                        : 'bg-terminal-accent text-terminal-bg hover:bg-terminal-accent/90'
-                    }`}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" strokeDasharray="20 8" />
-                        </svg>
-                        Generating...
-                      </>
-                    ) : (
-                      'Generate AI Analysis'
-                    )}
-                  </button>
-                  {!geminiConfigured && !isLoading && (
-                    <span className="text-xs text-yellow-400">Requires Gemini API key in settings</span>
-                  )}
-                </div>
-              </div>
-            )}
-            {error && (
-              <div className="mt-4 p-3 bg-red-900/20 border border-red-800 rounded text-sm text-red-400">
-                {error}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* How It Works */}
       <div className="card">
         <h3 className="card-header">How Recommendations Work</h3>
@@ -321,6 +341,229 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
             </ul>
           </div>
         </div>
+      </div>
+
+      {/* Deep Analysis Section */}
+      <div className="card">
+        <div className="mb-4">
+          <h3 className="card-header mb-1">Deep Analysis &mdash; Full Investor Framework</h3>
+          <p className="text-xs text-terminal-muted">Powered by Claude AI with web research</p>
+        </div>
+
+        {/* Model Selection */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-3">
+            {DEEP_MODELS.map((model) => (
+              <label
+                key={model.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                  selectedDeepModels.has(model.id)
+                    ? 'border-terminal-accent bg-terminal-accent/10 text-terminal-text'
+                    : 'border-terminal-border bg-terminal-bg text-terminal-muted hover:border-terminal-muted'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedDeepModels.has(model.id)}
+                  onChange={() => toggleDeepModel(model.id)}
+                  className="sr-only"
+                />
+                <span>{model.icon}</span>
+                <span className="text-sm font-medium">{model.name}</span>
+              </label>
+            ))}
+          </div>
+
+          {/* Hurdle Rate Input (only when Buffett selected) */}
+          {selectedDeepModels.has('buffett') && (
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-terminal-muted">Hurdle Rate:</label>
+              <input
+                type="number"
+                value={hurdleRate}
+                onChange={(e) => setHurdleRate(Number(e.target.value))}
+                min={1}
+                max={30}
+                className="w-20 px-2 py-1 rounded bg-terminal-bg border border-terminal-border text-terminal-text text-sm font-mono text-center"
+              />
+              <span className="text-sm text-terminal-muted">%</span>
+            </div>
+          )}
+
+          {/* Run Button */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRunDeepAnalysis}
+              disabled={deepLoading || selectedDeepModels.size === 0 || !claudeConfigured}
+              className={`px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 ${
+                deepLoading || selectedDeepModels.size === 0 || !claudeConfigured
+                  ? 'bg-terminal-muted/20 text-terminal-muted cursor-not-allowed'
+                  : 'bg-terminal-accent text-terminal-bg hover:bg-terminal-accent/90'
+              }`}
+            >
+              {deepLoading ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" strokeDasharray="20 8" />
+                  </svg>
+                  {currentDeepModel
+                    ? `Analyzing with ${DEEP_MODELS.find((m) => m.id === currentDeepModel)?.name || currentDeepModel}...`
+                    : 'Analyzing...'}
+                </>
+              ) : (
+                'Run Analysis'
+              )}
+            </button>
+            {!claudeConfigured && !isLoading && (
+              <span className="text-xs text-yellow-400">Requires ANTHROPIC_API_KEY in settings</span>
+            )}
+          </div>
+
+          {/* Error */}
+          {deepError && (
+            <div className="p-3 bg-red-900/20 border border-red-800 rounded text-sm text-red-400">
+              {deepError}
+            </div>
+          )}
+        </div>
+
+        {/* Deep Analysis Results */}
+        {deepAnalysis && (
+          <div className="mt-6 pt-4 border-t border-terminal-border space-y-3">
+            {deepAnalysis.generatedAt && (
+              <p className="text-xs text-terminal-muted">
+                Generated {new Date(deepAnalysis.generatedAt).toLocaleDateString()} at{' '}
+                {new Date(deepAnalysis.generatedAt).toLocaleTimeString()}
+              </p>
+            )}
+
+            {/* Individual Model Results */}
+            {DEEP_MODELS.map((model) => {
+              const content = deepAnalysis[model.id as keyof DeepAnalysis];
+              if (!content) return null;
+
+              return (
+                <div key={model.id} className="border border-terminal-border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => toggleDeepExpanded(model.id)}
+                    className="w-full flex items-center justify-between p-3 hover:bg-terminal-bg/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{model.icon}</span>
+                      <span className="font-medium text-terminal-text text-sm">{model.name}</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 text-terminal-muted transition-transform ${
+                        expandedDeepModels.has(model.id) ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {expandedDeepModels.has(model.id) && (
+                    <div className="p-4 pt-0 prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ children }) => <h1 className="text-lg font-bold text-terminal-text mt-4 mb-2">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-bold text-terminal-text mt-4 mb-2">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-bold text-terminal-text mt-3 mb-1">{children}</h3>,
+                          p: ({ children }) => <p className="text-sm text-terminal-muted mb-2">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 text-sm text-terminal-muted mb-2">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 text-sm text-terminal-muted mb-2">{children}</ol>,
+                          li: ({ children }) => <li className="text-sm text-terminal-muted">{children}</li>,
+                          strong: ({ children }) => <strong className="font-semibold text-terminal-text">{children}</strong>,
+                          table: ({ children }) => (
+                            <div className="overflow-x-auto my-3">
+                              <table className="w-full text-xs border-collapse border border-terminal-border">
+                                {children}
+                              </table>
+                            </div>
+                          ),
+                          th: ({ children }) => (
+                            <th className="text-left px-2 py-1 border border-terminal-border bg-terminal-bg text-terminal-text font-semibold whitespace-nowrap">
+                              {children}
+                            </th>
+                          ),
+                          td: ({ children }) => (
+                            <td className="px-2 py-1 border border-terminal-border text-terminal-muted text-xs">
+                              {children}
+                            </td>
+                          ),
+                        }}
+                      >
+                        {content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Combined Summary */}
+            {deepAnalysis.summary && (
+              <div className="border border-terminal-accent/30 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => toggleDeepExpanded('summary')}
+                  className="w-full flex items-center justify-between p-3 bg-terminal-accent/5 hover:bg-terminal-accent/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-terminal-accent font-bold text-sm">Combined Summary</span>
+                  </div>
+                  <svg
+                    className={`w-4 h-4 text-terminal-accent transition-transform ${
+                      expandedDeepModels.has('summary') ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {expandedDeepModels.has('summary') && (
+                  <div className="p-4 pt-0 prose prose-invert prose-sm max-w-none">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => <h1 className="text-lg font-bold text-terminal-text mt-4 mb-2">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-bold text-terminal-text mt-4 mb-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-bold text-terminal-text mt-3 mb-1">{children}</h3>,
+                        p: ({ children }) => <p className="text-sm text-terminal-muted mb-2">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc list-inside space-y-1 text-sm text-terminal-muted mb-2">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 text-sm text-terminal-muted mb-2">{children}</ol>,
+                        li: ({ children }) => <li className="text-sm text-terminal-muted">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold text-terminal-text">{children}</strong>,
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-3">
+                            <table className="w-full text-xs border-collapse border border-terminal-border">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        th: ({ children }) => (
+                          <th className="text-left px-2 py-1 border border-terminal-border bg-terminal-bg text-terminal-text font-semibold whitespace-nowrap">
+                            {children}
+                          </th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="px-2 py-1 border border-terminal-border text-terminal-muted text-xs">
+                            {children}
+                          </td>
+                        ),
+                      }}
+                    >
+                      {deepAnalysis.summary}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
