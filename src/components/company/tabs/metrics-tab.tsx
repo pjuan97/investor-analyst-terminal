@@ -20,8 +20,108 @@ interface MetricsTabProps {
   prices: PriceDaily[];
 }
 
-type ChartType = 'profitability' | 'returns' | 'valuation' | 'growth' | 'price';
+type ChartType = 'profitability' | 'returns' | 'valuation' | 'growth' | 'cashflow' | 'leverage' | 'pershare' | 'magicformula' | 'price';
 type PriceRange = '90d' | '1y' | '3y' | '5y' | 'max';
+
+const CHART_EXPLANATIONS: Record<string, {
+  what: string;
+  variables: { name: string; description: string }[];
+  howToRead: { positive: string; negative: string };
+}> = {
+  profitability: {
+    what: "Shows how much of each dollar of revenue the company keeps at different stages of the business. Higher margins mean the company is more efficient at converting sales into profit.",
+    variables: [
+      { name: "Gross Margin", description: "Revenue minus cost of goods sold. Shows production efficiency." },
+      { name: "Operating Margin", description: "Profit after operating expenses. Shows business efficiency before taxes and interest." },
+      { name: "Net Margin", description: "Final profit after all expenses. The 'bottom line' as a % of revenue." },
+    ],
+    howToRead: {
+      positive: "Margins trending upward over time. Gross margin above 40% is typically strong. Net margin above 15% is excellent for most industries.",
+      negative: "Shrinking margins year over year. Large gap between gross and net margin may indicate high overhead or debt costs.",
+    },
+  },
+  returns: {
+    what: "Measures how efficiently the company generates profit from the capital invested in it. These are the metrics Warren Buffett uses most to evaluate business quality.",
+    variables: [
+      { name: "ROE", description: "Return on Equity — profit generated per dollar of shareholder equity. Above 15% is considered strong." },
+      { name: "ROIC", description: "Return on Invested Capital — profit per dollar of total capital deployed. The most comprehensive return metric." },
+      { name: "ROA", description: "Return on Assets — profit per dollar of total assets. Useful for asset-heavy businesses." },
+    ],
+    howToRead: {
+      positive: "ROE consistently above 15%, ROIC above 10-12%. Stable or improving returns over time suggest a durable competitive advantage.",
+      negative: "ROE high but ROIC low — may indicate excessive debt boosting returns artificially. Declining returns over time signal competitive pressure.",
+    },
+  },
+  valuation: {
+    what: "Shows how much the market is paying for each unit of earnings or assets. Lower values generally mean cheaper; higher values mean the market expects strong future growth.",
+    variables: [
+      { name: "P/E Ratio", description: "Price per dollar of earnings. Market average is ~15-20x. Growth companies often trade at 30x+." },
+      { name: "P/B Ratio", description: "Price per dollar of book value (assets minus liabilities). Below 1x may indicate undervaluation." },
+      { name: "EV/EBITDA", description: "Enterprise value relative to operating earnings. Below 10x is generally considered cheap; above 20x is expensive." },
+    ],
+    howToRead: {
+      positive: "Ratios declining over time while earnings grow — means you're paying less for more. Low ratios relative to historical average may signal opportunity.",
+      negative: "Ratios expanding faster than earnings growth. Very high P/E with slowing growth is a warning sign.",
+    },
+  },
+  growth: {
+    what: "Tracks how fast the company is growing its revenue, earnings per share, and free cash flow. Sustained growth is the primary driver of long-term stock returns.",
+    variables: [
+      { name: "Revenue Growth", description: "Year-over-year change in total sales. Shows if the business is expanding." },
+      { name: "EPS Growth", description: "Year-over-year change in earnings per share. More important than revenue — shows if growth is profitable." },
+      { name: "FCF Growth", description: "Year-over-year change in free cash flow. The most reliable growth metric — hard to manipulate." },
+    ],
+    howToRead: {
+      positive: "Consistent double-digit growth across all three metrics. EPS and FCF growing faster than revenue indicates improving efficiency.",
+      negative: "Revenue growing but EPS declining — profit is not keeping up. Negative FCF growth while revenue grows may signal cash burn issues.",
+    },
+  },
+  cashflow: {
+    what: "Shows the actual cash the business generates. Unlike accounting profit, cash flow is harder to manipulate and tells you if the company can fund its own growth.",
+    variables: [
+      { name: "FCF Margin", description: "Free cash flow as a percentage of revenue. Shows how much of each sales dollar becomes real cash." },
+      { name: "FCF Yield", description: "Free cash flow relative to market cap. Higher yield means more cash generated per dollar of market value." },
+      { name: "FCF/Share", description: "Free cash flow divided by shares outstanding. The per-share cash generation power." },
+    ],
+    howToRead: {
+      positive: "Positive and growing FCF consistently. FCF margin above 15% is strong. FCF growing faster than net income indicates high earnings quality.",
+      negative: "Negative FCF for multiple years is a red flag unless the company is in early growth stage. FCF well below net income may indicate aggressive accounting.",
+    },
+  },
+  leverage: {
+    what: "Measures the company's debt load and its ability to service that debt. High leverage amplifies both gains and losses and can be dangerous during downturns.",
+    variables: [
+      { name: "Debt/Equity", description: "Total debt relative to shareholder equity. Below 1x is conservative; above 2x deserves scrutiny." },
+      { name: "Debt/EBITDA", description: "How many years of operating profit it would take to pay off all debt. Below 2x is healthy; above 4x is high." },
+      { name: "Interest Coverage", description: "How many times operating profit covers interest payments. Below 3x is a warning sign." },
+    ],
+    howToRead: {
+      positive: "Debt/Equity below 1x, Debt/EBITDA below 2x, Interest Coverage above 5x. Leverage declining over time as the company pays down debt.",
+      negative: "Rising debt levels while earnings stagnate. Interest Coverage below 2x means a downturn could make debt servicing difficult.",
+    },
+  },
+  pershare: {
+    what: "Tracks value creation on a per-share basis. These metrics matter most because share dilution can mask real growth — a company can grow earnings while each share becomes worth less.",
+    variables: [
+      { name: "FCF/Share", description: "Free cash flow per share. Often considered more reliable than EPS as it reflects actual cash generation." },
+    ],
+    howToRead: {
+      positive: "FCF/Share growing consistently over 5-10 years. Share count stable or declining (buybacks) means each share is worth more over time.",
+      negative: "FCF/Share flat or declining while total FCF grows — indicates share dilution is eroding per-share value.",
+    },
+  },
+  magicformula: {
+    what: "Joel Greenblatt's Magic Formula ranks companies on two factors: how cheap they are (Earnings Yield) and how good they are (Return on Capital). The goal is to buy good companies at cheap prices.",
+    variables: [
+      { name: "Earnings Yield", description: "EBIT divided by Enterprise Value. Higher = cheaper. Greenblatt prefers above 10%." },
+      { name: "Return on Capital", description: "EBIT divided by (Net Working Capital + Net Fixed Assets). Higher = better business quality." },
+    ],
+    howToRead: {
+      positive: "Both metrics high simultaneously — a good company at a cheap price. Earnings Yield above 10% with Return on Capital above 25% is a strong Magic Formula candidate.",
+      negative: "High Earnings Yield but low Return on Capital — cheap but mediocre quality. High Return on Capital but low Earnings Yield — great business but expensive.",
+    },
+  },
+};
 
 export function MetricsTab({ metrics, prices }: MetricsTabProps) {
   const [chartType, setChartType] = useState<ChartType>('profitability');
@@ -53,6 +153,17 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
       revenueGrowth: m.revenueGrowth ? Number(m.revenueGrowth) * 100 : null,
       epsGrowth: m.epsGrowth ? Number(m.epsGrowth) * 100 : null,
       fcfGrowth: m.fcfGrowth ? Number(m.fcfGrowth) * 100 : null,
+      // Cash Flow (percentages)
+      fcfMarginValue: m.fcfMargin ? Number(m.fcfMargin) * 100 : null,
+      fcfYieldValue: m.fcfYield ? Number(m.fcfYield) * 100 : null,
+      fcfPerShareValue: m.fcfPerShare ? Number(m.fcfPerShare) : null,
+      // Leverage (ratios)
+      debtToEquityValue: m.debtToEquity ? Number(m.debtToEquity) : null,
+      debtToEbitdaValue: m.debtToEbitda ? Number(m.debtToEbitda) : null,
+      interestCoverageValue: m.interestCoverage ? Number(m.interestCoverage) : null,
+      // Magic Formula (percentages)
+      earningsYieldMFValue: m.earningsYieldMF ? Number(m.earningsYieldMF) * 100 : null,
+      returnOnCapitalMFValue: m.returnOnCapitalMF ? Number(m.returnOnCapitalMF) * 100 : null,
     }));
 
   // Prepare price data based on selected range
@@ -106,6 +217,35 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
         { key: 'revenueGrowth', color: '#3fb950', name: 'Revenue Growth' },
         { key: 'epsGrowth', color: '#58a6ff', name: 'EPS Growth' },
         { key: 'fcfGrowth', color: '#d29922', name: 'FCF Growth' },
+      ],
+    },
+    cashflow: {
+      title: 'Cash Flow',
+      lines: [
+        { key: 'fcfMarginValue', color: '#22c55e', name: 'FCF Margin' },
+        { key: 'fcfYieldValue', color: '#3b82f6', name: 'FCF Yield' },
+        { key: 'fcfPerShareValue', color: '#f59e0b', name: 'FCF/Share' },
+      ],
+    },
+    leverage: {
+      title: 'Leverage & Coverage',
+      lines: [
+        { key: 'debtToEquityValue', color: '#ef4444', name: 'Debt/Equity' },
+        { key: 'debtToEbitdaValue', color: '#f59e0b', name: 'Debt/EBITDA' },
+        { key: 'interestCoverageValue', color: '#22c55e', name: 'Interest Coverage' },
+      ],
+    },
+    pershare: {
+      title: 'Per Share ($)',
+      lines: [
+        { key: 'fcfPerShareValue', color: '#3b82f6', name: 'FCF/Share' },
+      ],
+    },
+    magicformula: {
+      title: 'Magic Formula',
+      lines: [
+        { key: 'earningsYieldMFValue', color: '#22c55e', name: 'Earnings Yield' },
+        { key: 'returnOnCapitalMFValue', color: '#3b82f6', name: 'Return on Capital' },
       ],
     },
     price: {
@@ -193,13 +333,13 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
                   <YAxis
                     stroke="#8b949e"
                     fontSize={12}
-                    tickFormatter={(v) =>
-                      chartType === 'price'
-                        ? `$${v}`
-                        : chartType === 'valuation'
-                        ? `${v}x`
-                        : `${v}%`
-                    }
+                    tickFormatter={(v) => {
+                      if (chartType === 'price') return `$${v}`;
+                      if (chartType === 'valuation') return `${v}x`;
+                      if (chartType === 'leverage') return v.toFixed(1);
+                      if (chartType === 'pershare') return `$${v.toFixed(2)}`;
+                      return `${v}%`;
+                    }}
                   />
                   <Tooltip
                     contentStyle={{
@@ -208,14 +348,13 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
                       borderRadius: '8px',
                     }}
                     labelStyle={{ color: '#c9d1d9' }}
-                    formatter={(value: number) => [
-                      chartType === 'price'
-                        ? `$${value?.toFixed(2)}`
-                        : chartType === 'valuation'
-                        ? `${value?.toFixed(2)}x`
-                        : `${value?.toFixed(1)}%`,
-                      '',
-                    ]}
+                    formatter={(value: number) => {
+                      if (chartType === 'price') return [`$${value?.toFixed(2)}`, ''];
+                      if (chartType === 'valuation') return [`${value?.toFixed(2)}x`, ''];
+                      if (chartType === 'leverage') return [value?.toFixed(2), ''];
+                      if (chartType === 'pershare') return [`$${value?.toFixed(2)}`, ''];
+                      return [`${value?.toFixed(1)}%`, ''];
+                    }}
                   />
                   <Legend />
                   {currentConfig.lines.map((line) => (
@@ -240,6 +379,37 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
           )}
         </div>
       </div>
+
+      {/* Chart Explanation */}
+      {chartType !== 'price' && CHART_EXPLANATIONS[chartType] && (
+        <div className="mt-4 p-4 border border-terminal-border rounded-lg bg-terminal-bg/50 space-y-3">
+          <p className="text-sm text-terminal-muted leading-relaxed">
+            {CHART_EXPLANATIONS[chartType].what}
+          </p>
+          <div className="grid grid-cols-1 gap-2">
+            {CHART_EXPLANATIONS[chartType].variables.map((v) => (
+              <div key={v.name} className="flex gap-2 text-xs">
+                <span className="text-terminal-text font-semibold whitespace-nowrap">{v.name}:</span>
+                <span className="text-terminal-muted">{v.description}</span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-1 border-t border-terminal-border">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-green-400">&#10003; Positive signals</p>
+              <p className="text-xs text-terminal-muted leading-relaxed">
+                {CHART_EXPLANATIONS[chartType].howToRead.positive}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-red-400">&#10007; Warning signs</p>
+              <p className="text-xs text-terminal-muted leading-relaxed">
+                {CHART_EXPLANATIONS[chartType].howToRead.negative}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Table */}
       {metrics.length > 0 && chartType !== 'price' && (
@@ -268,6 +438,10 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
                           {value !== null
                             ? chartType === 'valuation'
                               ? `${value.toFixed(2)}x`
+                              : chartType === 'leverage'
+                              ? value.toFixed(2)
+                              : chartType === 'pershare'
+                              ? `$${value.toFixed(2)}`
                               : `${value.toFixed(1)}%`
                             : '—'}
                         </td>
