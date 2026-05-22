@@ -70,10 +70,14 @@ model Company {
   exchange    String?  // NYSE, NASDAQ, etc.
   sector      String?
   industry    String?
-  description String?
+  description String?  @db.Text
   website     String?
   country     String?  @default("US")
   currency    String   @default("USD")
+  ceo         String?
+  employees   Int?
+  ipoDate     DateTime? @map("ipo_date")
+  logoUrl     String?   @map("logo_url")
 
   // Data quality tracking
   lastSecFiling     DateTime? @map("last_sec_filing")

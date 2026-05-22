@@ -72,6 +72,8 @@ export function CompanyTabs({
             recommendation={latestRec}
             company={company}
             latestMetrics={metrics[0] || null}
+            prices={prices}
+            financials={financials}
           />
         )}
         {activeTab === 'financials' && (

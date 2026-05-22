@@ -131,6 +131,42 @@ export class FmpProvider implements FinancialDataProvider {
   }
 
   // --------------------------------------------------------------------------
+  // COMPANY PROFILE
+  // --------------------------------------------------------------------------
+
+  async fetchCompanyProfile(ticker: string): Promise<{
+    description: string | null;
+    industry: string | null;
+    website: string | null;
+    ceo: string | null;
+    employees: number | null;
+    ipoDate: string | null;
+    logoUrl: string | null;
+    country: string | null;
+  } | null> {
+    const url = `${FMP_BASE_URL}/profile?symbol=${ticker}&apikey=${this.apiKey}`;
+    const data = await this.fetchWithRetry<Record<string, unknown>[]>(url);
+
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    const p = data[0];
+    return {
+      description: (p.description as string) || null,
+      industry: (p.industry as string) || null,
+      website: (p.website as string) || null,
+      ceo: (p.ceo as string) || null,
+      employees: typeof p.fullTimeEmployees === 'number'
+        ? p.fullTimeEmployees
+        : p.fullTimeEmployees
+          ? parseInt(String(p.fullTimeEmployees), 10) || null
+          : null,
+      ipoDate: (p.ipoDate as string) || null,
+      logoUrl: (p.image as string) || null,
+      country: (p.country as string) || null,
+    };
+  }
+
+  // --------------------------------------------------------------------------
   // PRIVATE FETCH METHODS
   // --------------------------------------------------------------------------
 

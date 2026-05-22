@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getProviders } from '@/lib/providers';
+import { getFmpProvider } from '@/lib/providers/fmp';
 import { calculateAndStoreMetrics } from '@/lib/metrics';
 import { runAllModels, type UnifiedMetricsInput } from '@/lib/models';
 
@@ -234,6 +235,31 @@ export async function POST(
       });
     } else {
       results.prices.error = pricesResult.error || 'Failed to fetch prices';
+    }
+
+    // 2.5 Fetch company profile (enrichment)
+    const fmp = getFmpProvider();
+    if (fmp) {
+      try {
+        const profile = await fmp.fetchCompanyProfile(upperTicker);
+        if (profile) {
+          await prisma.company.update({
+            where: { id: company.id },
+            data: {
+              description: profile.description,
+              industry: profile.industry,
+              website: profile.website,
+              ceo: profile.ceo,
+              employees: profile.employees,
+              ipoDate: profile.ipoDate ? new Date(profile.ipoDate) : null,
+              logoUrl: profile.logoUrl,
+              country: profile.country,
+            },
+          });
+        }
+      } catch (profileError) {
+        console.error('Profile enrichment error:', profileError);
+      }
     }
 
     // 3. Calculate metrics

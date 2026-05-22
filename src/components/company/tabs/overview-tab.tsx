@@ -1,32 +1,366 @@
 'use client';
 
-import type { Company, MetricsAnnual, RecommendationDaily } from '@prisma/client';
+import { useState, useMemo, useCallback } from 'react';
+import type {
+  Company,
+  FinancialStatementAnnual,
+  MetricsAnnual,
+  PriceDaily,
+  RecommendationDaily,
+} from '@prisma/client';
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  Tooltip,
+  ReferenceLine,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface OverviewTabProps {
   recommendation: RecommendationDaily | null;
   company: Company;
   latestMetrics: MetricsAnnual | null;
+  prices: PriceDaily[];
+  financials: FinancialStatementAnnual[];
 }
 
-export function OverviewTab({ recommendation, company, latestMetrics }: OverviewTabProps) {
-  const formatPercent = (value: unknown) => {
-    if (value === null || value === undefined) return '—';
-    const num = Number(value);
-    if (isNaN(num)) return '—';
-    return `${(num * 100).toFixed(1)}%`;
-  };
+type PriceRange = '1m' | '3m' | '6m' | '1y' | '3y' | 'max';
 
-  const formatRatio = (value: unknown) => {
-    if (value === null || value === undefined) return '—';
-    const num = Number(value);
-    if (isNaN(num)) return '—';
-    return num.toFixed(2);
-  };
+const RANGE_DAYS: Record<PriceRange, number> = {
+  '1m': 21,
+  '3m': 63,
+  '6m': 126,
+  '1y': 252,
+  '3y': 756,
+  'max': Infinity,
+};
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function fmt(value: unknown, style: 'pct' | 'ratio' | 'money'): string {
+  if (value === null || value === undefined) return '—';
+  const num = Number(value);
+  if (isNaN(num)) return '—';
+  if (style === 'pct') return `${(num * 100).toFixed(1)}%`;
+  if (style === 'money') return formatLargeNumber(num);
+  return num.toFixed(2);
+}
+
+function formatLargeNumber(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+  if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  return `$${n.toLocaleString()}`;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function OverviewTab({
+  recommendation,
+  company,
+  latestMetrics,
+  prices,
+  financials,
+}: OverviewTabProps) {
+  const [priceRange, setPriceRange] = useState<PriceRange>('1y');
+  const [companyData, setCompanyData] = useState<Company>(company);
+  const [enriching, setEnriching] = useState(false);
+
+  const enrichProfile = useCallback(async () => {
+    setEnriching(true);
+    try {
+      const res = await fetch(`/api/company/${company.ticker}/profile`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.company) setCompanyData(json.company);
+      }
+    } finally {
+      setEnriching(false);
+    }
+  }, [company.ticker]);
+
+  // ---- Price chart data ---------------------------------------------------
+  const {
+    chartData,
+    currentPrice,
+    priceChange,
+    priceChangePct,
+    isPositive,
+    financialMarkers,
+  } = useMemo(() => {
+    if (prices.length === 0) {
+      return {
+        chartData: [],
+        currentPrice: 0,
+        priceChange: 0,
+        priceChangePct: 0,
+        isPositive: true,
+        financialMarkers: [],
+      };
+    }
+
+    const days = RANGE_DAYS[priceRange];
+    const sliceCount = days === Infinity ? prices.length : Math.min(days, prices.length);
+    const sliced = prices.slice(0, sliceCount).reverse();
+
+    const data = sliced.map((p) => ({
+      date: new Date(p.date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: sliceCount > 252 ? '2-digit' : undefined,
+      }),
+      rawDate: new Date(p.date),
+      close: Number(p.close),
+      volume: Number(p.volume ?? 0),
+    }));
+
+    const first = data[0]?.close ?? 0;
+    const last = data[data.length - 1]?.close ?? 0;
+    const change = last - first;
+    const changePct = first !== 0 ? (change / first) * 100 : 0;
+
+    // Build financial year-end markers (only for 3Y / Max)
+    let markers: { dateLabel: string; year: number; revenue: number; netIncome: number; closeAtDate: number }[] = [];
+    if ((priceRange === '3y' || priceRange === 'max') && financials.length > 0) {
+      const sorted = [...financials].sort((a, b) => a.fiscalYear - b.fiscalYear);
+      for (const fin of sorted) {
+        const endDate = new Date(fin.periodEnd);
+        // Find closest price data point
+        let closest = data[0];
+        let minDiff = Infinity;
+        for (const d of data) {
+          const diff = Math.abs(d.rawDate.getTime() - endDate.getTime());
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = d;
+          }
+        }
+        // Only include if within ~30 days
+        if (minDiff < 30 * 24 * 60 * 60 * 1000) {
+          markers.push({
+            dateLabel: closest.date,
+            year: fin.fiscalYear,
+            revenue: fin.revenue ? Number(fin.revenue) : 0,
+            netIncome: fin.netIncome ? Number(fin.netIncome) : 0,
+            closeAtDate: closest.close,
+          });
+        }
+      }
+    }
+
+    return {
+      chartData: data,
+      currentPrice: last,
+      priceChange: change,
+      priceChangePct: changePct,
+      isPositive: change >= 0,
+      financialMarkers: markers,
+    };
+  }, [prices, priceRange, financials]);
+
+  const accentColor = isPositive ? '#22c55e' : '#ef4444';
+  const fillOpacity = 0.12;
+
+  // ---- About section visibility ------------------------------------------
+  const hasAbout =
+    companyData.description || companyData.sector || companyData.industry || companyData.exchange || companyData.website;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Recommendation Card */}
-      <div className="lg:col-span-2 card">
+    <div className="space-y-6">
+      {/* ================================================================= */}
+      {/* SECTION 1 — Price Chart + Key Metrics                             */}
+      {/* ================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Price Chart (2/3) */}
+        <div className="lg:col-span-2 card">
+          {prices.length > 0 ? (
+            <>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-1">
+                <div>
+                  <h3 className="card-header mb-0">Price History</h3>
+                  <div className="flex items-baseline gap-3 mt-1">
+                    <span className="text-2xl font-bold text-terminal-text font-mono">
+                      ${currentPrice.toFixed(2)}
+                    </span>
+                    <span
+                      className={`text-sm font-mono font-medium ${
+                        isPositive ? 'text-green-400' : 'text-red-400'
+                      }`}
+                    >
+                      {isPositive ? '+' : ''}
+                      {priceChange.toFixed(2)} ({isPositive ? '+' : ''}
+                      {priceChangePct.toFixed(2)}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-1 mt-1">
+                  {(['1m', '3m', '6m', '1y', '3y', 'max'] as PriceRange[]).map((range) => (
+                    <button
+                      key={range}
+                      onClick={() => setPriceRange(range)}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        priceRange === range
+                          ? 'bg-terminal-accent text-white'
+                          : 'bg-terminal-bg text-terminal-muted hover:text-terminal-text'
+                      }`}
+                    >
+                      {range === 'max' ? 'Max' : range.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Area Chart */}
+              <div className="h-[220px] mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+                    <defs>
+                      <linearGradient id="overviewPriceGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={accentColor} stopOpacity={fillOpacity} />
+                        <stop offset="100%" stopColor={accentColor} stopOpacity={0.01} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="date"
+                      stroke="#8b949e"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                      minTickGap={60}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#161b22',
+                        border: '1px solid #30363d',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                      }}
+                      labelStyle={{ color: '#c9d1d9' }}
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Close']}
+                    />
+                    {financialMarkers.map((m) => (
+                      <ReferenceLine
+                        key={m.year}
+                        x={m.dateLabel}
+                        stroke="#8b949e"
+                        strokeDasharray="3 3"
+                        strokeOpacity={0.5}
+                        label={{
+                          value: `FY${m.year}`,
+                          position: 'top',
+                          fill: '#8b949e',
+                          fontSize: 10,
+                        }}
+                      />
+                    ))}
+                    <Area
+                      type="monotone"
+                      dataKey="close"
+                      stroke={accentColor}
+                      strokeWidth={2}
+                      fill="url(#overviewPriceGradient)"
+                      dot={false}
+                      activeDot={{ r: 4, fill: accentColor }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Volume Bar Chart */}
+              <div className="h-[60px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 0, right: 4, bottom: 0, left: 4 }}>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#161b22',
+                        border: '1px solid #30363d',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                      }}
+                      labelStyle={{ color: '#c9d1d9' }}
+                      formatter={(value: number) => [value.toLocaleString(), 'Volume']}
+                    />
+                    <Bar dataKey="volume" fill="#6b7280" fillOpacity={0.25} radius={[1, 1, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16 text-terminal-muted">
+              <p>No price data available.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Key Metrics (1/3) */}
+        <div className="card overflow-y-auto max-h-[480px]">
+          <h3 className="card-header">Key Metrics</h3>
+
+          {latestMetrics ? (
+            <div className="space-y-4 text-sm">
+              {/* Market Data */}
+              <MetricsSection title="MARKET DATA">
+                <MetricRow label="Market Cap" value={fmt(latestMetrics.marketCap, 'money')} />
+                <MetricRow label="Enterprise Value" value={fmt(latestMetrics.enterpriseValue, 'money')} />
+                <MetricRow label="P/E Ratio" value={fmt(latestMetrics.peRatio, 'ratio')} />
+                <MetricRow label="P/B Ratio" value={fmt(latestMetrics.pbRatio, 'ratio')} />
+              </MetricsSection>
+
+              {/* Efficiency */}
+              <MetricsSection title="EFFICIENCY">
+                <MetricRow label="ROE" value={fmt(latestMetrics.roe, 'pct')} />
+                <MetricRow label="ROIC" value={fmt(latestMetrics.roic, 'pct')} />
+                <MetricRow label="ROA" value={fmt(latestMetrics.roa, 'pct')} />
+                <MetricRow label="Net Margin" value={fmt(latestMetrics.netMargin, 'pct')} />
+                <MetricRow label="Gross Margin" value={fmt(latestMetrics.grossMargin, 'pct')} />
+              </MetricsSection>
+
+              {/* Valuation */}
+              <MetricsSection title="VALUATION">
+                <MetricRow label="EV/EBITDA" value={fmt(latestMetrics.evToEbitda, 'ratio')} />
+                <MetricRow label="Earnings Yield" value={fmt(latestMetrics.earningsYield, 'pct')} />
+                <MetricRow label="Debt/Equity" value={fmt(latestMetrics.debtToEquity, 'ratio')} />
+              </MetricsSection>
+
+              {/* Growth */}
+              <MetricsSection title="GROWTH">
+                <GrowthRow label="Revenue Growth" value={latestMetrics.revenueGrowth} />
+                <GrowthRow label="EPS Growth" value={latestMetrics.epsGrowth} />
+                <GrowthRow label="FCF Growth" value={latestMetrics.fcfGrowth} />
+              </MetricsSection>
+
+              {/* Quality Score */}
+              <MetricsSection title="QUALITY SCORE">
+                <QualityBar
+                  score={latestMetrics.qualityScore ? Number(latestMetrics.qualityScore) : null}
+                />
+              </MetricsSection>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-terminal-muted">
+              <p>No metrics calculated yet.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ================================================================= */}
+      {/* SECTION 2 — Investment Recommendation                             */}
+      {/* ================================================================= */}
+      <div className="card">
         <h3 className="card-header">Investment Recommendation</h3>
 
         {recommendation ? (
@@ -73,63 +407,116 @@ export function OverviewTab({ recommendation, company, latestMetrics }: Overview
           <div className="text-center py-8 text-terminal-muted">
             <p>No recommendation available yet.</p>
             <p className="text-sm mt-2">
-              Click the &quot;Refresh&quot; button above to fetch data and generate a recommendation.
+              Click the &quot;Refresh&quot; button above to fetch data and generate a
+              recommendation.
             </p>
           </div>
         )}
       </div>
 
-      {/* Key Metrics Card */}
+      {/* ================================================================= */}
+      {/* SECTION 3 — About the Company                                     */}
+      {/* ================================================================= */}
+      {/* Always render About — show Enrich button when description is missing */}
       <div className="card">
-        <h3 className="card-header">Key Metrics</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="card-header mb-0">About {companyData.name}</h3>
+          {!companyData.description && (
+            <button
+              onClick={enrichProfile}
+              disabled={enriching}
+              className="px-3 py-1 text-xs rounded bg-terminal-accent text-white hover:bg-terminal-accent/80 disabled:opacity-50 transition-colors"
+            >
+              {enriching ? 'Fetching profile...' : 'Enrich Profile'}
+            </button>
+          )}
+        </div>
 
-        {latestMetrics ? (
-          <div className="space-y-4">
-            <MetricRow
-              label="Fiscal Year"
-              value={String(latestMetrics.fiscalYear)}
-            />
+        {companyData.description && (
+          <p className="text-sm text-terminal-text leading-relaxed mb-4">
+            {companyData.description}
+          </p>
+        )}
 
-            <div className="pt-2 border-t border-terminal-border">
-              <div className="text-xs text-terminal-muted uppercase tracking-wide mb-2">
-                Profitability
+        {hasAbout && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            {companyData.sector && (
+              <div className="flex justify-between py-1">
+                <span className="text-terminal-muted">Sector</span>
+                <span className="text-terminal-text">{companyData.sector}</span>
               </div>
-              <MetricRow label="ROE" value={formatPercent(latestMetrics.roe)} />
-              <MetricRow label="ROIC" value={formatPercent(latestMetrics.roic)} />
-              <MetricRow label="Net Margin" value={formatPercent(latestMetrics.netMargin)} />
-            </div>
-
-            <div className="pt-2 border-t border-terminal-border">
-              <div className="text-xs text-terminal-muted uppercase tracking-wide mb-2">
-                Valuation
+            )}
+            {companyData.industry && (
+              <div className="flex justify-between py-1">
+                <span className="text-terminal-muted">Industry</span>
+                <span className="text-terminal-text">{companyData.industry}</span>
               </div>
-              <MetricRow label="P/E Ratio" value={formatRatio(latestMetrics.peRatio)} />
-              <MetricRow label="P/B Ratio" value={formatRatio(latestMetrics.pbRatio)} />
-              <MetricRow label="EV/EBITDA" value={formatRatio(latestMetrics.evToEbitda)} />
-              <MetricRow label="Earnings Yield" value={formatPercent(latestMetrics.earningsYield)} />
-            </div>
-
-            <div className="pt-2 border-t border-terminal-border">
-              <div className="text-xs text-terminal-muted uppercase tracking-wide mb-2">
-                Growth
+            )}
+            {companyData.exchange && (
+              <div className="flex justify-between py-1">
+                <span className="text-terminal-muted">Exchange</span>
+                <span className="text-terminal-text">{companyData.exchange}</span>
               </div>
-              <MetricRow label="Revenue Growth" value={formatPercent(latestMetrics.revenueGrowth)} />
-              <MetricRow label="EPS Growth" value={formatPercent(latestMetrics.epsGrowth)} />
-            </div>
-
-            <div className="pt-2 border-t border-terminal-border">
-              <div className="text-xs text-terminal-muted uppercase tracking-wide mb-2">
-                Quality Score
+            )}
+            {companyData.website && (
+              <div className="flex justify-between py-1">
+                <span className="text-terminal-muted">Website</span>
+                <a
+                  href={companyData.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-terminal-accent hover:underline"
+                >
+                  {companyData.website.replace(/^https?:\/\//, '')}
+                </a>
               </div>
-              <QualityBar score={latestMetrics.qualityScore ? Number(latestMetrics.qualityScore) : null} />
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-terminal-muted">
-            <p>No metrics calculated yet.</p>
+            )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function MetricsSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="pt-2 border-t border-terminal-border first:border-t-0 first:pt-0">
+      <div className="text-xs text-terminal-muted uppercase tracking-wide mb-2">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function MetricRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-center py-0.5">
+      <span className="text-terminal-muted">{label}</span>
+      <span className="font-mono text-terminal-text">{value}</span>
+    </div>
+  );
+}
+
+function GrowthRow({ label, value }: { label: string; value: unknown }) {
+  if (value === null || value === undefined) {
+    return <MetricRow label={label} value="—" />;
+  }
+  const num = Number(value);
+  if (isNaN(num)) {
+    return <MetricRow label={label} value="—" />;
+  }
+  const pct = (num * 100).toFixed(1);
+  const color = num >= 0 ? 'text-green-400' : 'text-red-400';
+  return (
+    <div className="flex justify-between items-center py-0.5">
+      <span className="text-terminal-muted">{label}</span>
+      <span className={`font-mono ${color}`}>
+        {num >= 0 ? '+' : ''}
+        {pct}%
+      </span>
     </div>
   );
 }
@@ -146,7 +533,6 @@ function RatingBadge({
     HOLD: 'bg-yellow-900/50 text-yellow-400 border-yellow-700',
     SELL: 'bg-red-900/50 text-red-400 border-red-700',
   };
-
   const sizeClasses = size === 'large' ? 'text-2xl px-4 py-2' : 'text-sm px-2 py-1';
 
   return (
@@ -158,15 +544,6 @@ function RatingBadge({
   );
 }
 
-function MetricRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-sm text-terminal-muted">{label}</span>
-      <span className="text-sm font-mono text-terminal-text">{value}</span>
-    </div>
-  );
-}
-
 function QualityBar({ score }: { score: number | null }) {
   if (score === null) {
     return <div className="text-sm text-terminal-muted">Not calculated</div>;
@@ -174,11 +551,7 @@ function QualityBar({ score }: { score: number | null }) {
 
   const percentage = score * 100;
   const color =
-    percentage >= 80
-      ? 'bg-green-500'
-      : percentage >= 50
-      ? 'bg-yellow-500'
-      : 'bg-red-500';
+    percentage >= 80 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500';
 
   return (
     <div className="space-y-1">
@@ -187,10 +560,7 @@ function QualityBar({ score }: { score: number | null }) {
         <span className="text-terminal-text font-mono">{percentage.toFixed(0)}%</span>
       </div>
       <div className="h-2 bg-terminal-border rounded-full overflow-hidden">
-        <div
-          className={`h-full ${color} transition-all`}
-          style={{ width: `${percentage}%` }}
-        />
+        <div className={`h-full ${color} transition-all`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );
