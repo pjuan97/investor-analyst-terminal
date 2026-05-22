@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 export default function Home() {
-  // Redirect to watchlist (main dashboard)
+  // Redirect to dashboard (home page)
   // Auth middleware will redirect to login if not authenticated
-  redirect('/watchlist');
+  redirect('/dashboard');
 }
