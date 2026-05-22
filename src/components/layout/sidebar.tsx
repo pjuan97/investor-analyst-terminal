@@ -24,6 +24,25 @@ const navItems = [
     ),
   },
   {
+    name: 'Screener',
+    href: '/screener',
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 14.414V20a1 1 0 01-.553.894l-4 2A1 1 0 017 22v-7.586L3.293 6.707A1 1 0 013 6V4z"
+        />
+      </svg>
+    ),
+  },
+  {
     name: 'Watchlist',
     href: '/watchlist',
     icon: (
