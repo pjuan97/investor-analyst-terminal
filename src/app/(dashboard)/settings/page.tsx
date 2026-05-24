@@ -55,14 +55,14 @@ export default async function SettingsPage() {
             <span
               className={`inline-flex items-center gap-2 text-sm ${
                 process.env.ENABLE_CRON === 'true'
-                  ? 'text-green-400'
+                  ? 'text-success'
                   : 'text-terminal-muted'
               }`}
             >
               <span
                 className={`w-2 h-2 rounded-full ${
                   process.env.ENABLE_CRON === 'true'
-                    ? 'bg-green-500'
+                    ? 'bg-success-dot'
                     : 'bg-gray-500'
                 }`}
               />
@@ -105,9 +105,9 @@ function ProviderStatus({
   details: string;
 }) {
   const statusColors = {
-    active: 'bg-green-500',
+    active: 'bg-success-dot',
     inactive: 'bg-gray-500',
-    error: 'bg-red-500',
+    error: 'bg-danger-dot',
   };
 
   const statusText = {

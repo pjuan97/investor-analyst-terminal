@@ -196,7 +196,7 @@ export function OverviewTab({
                     </span>
                     <span
                       className={`text-sm font-mono font-medium ${
-                        isPositive ? 'text-green-400' : 'text-red-400'
+                        isPositive ? 'text-positive' : 'text-negative'
                       }`}
                     >
                       {isPositive ? '+' : ''}
@@ -391,8 +391,8 @@ export function OverviewTab({
             </div>
 
             {recommendation.triggers && (
-              <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
-                <div className="text-sm font-medium text-yellow-400 mb-2">
+              <div className="mt-4 p-4 alert-warning rounded-lg">
+                <div className="text-sm font-medium mb-2">
                   What could change this recommendation?
                 </div>
                 <ul className="text-sm text-terminal-muted list-disc list-inside space-y-1">
@@ -509,7 +509,7 @@ function GrowthRow({ label, value }: { label: string; value: unknown }) {
     return <MetricRow label={label} value="—" />;
   }
   const pct = (num * 100).toFixed(1);
-  const color = num >= 0 ? 'text-green-400' : 'text-red-400';
+  const color = num >= 0 ? 'text-positive' : 'text-negative';
   return (
     <div className="flex justify-between items-center py-0.5">
       <span className="text-terminal-muted">{label}</span>
@@ -529,15 +529,15 @@ function RatingBadge({
   size?: 'normal' | 'large';
 }) {
   const colors = {
-    BUY: 'bg-green-900/50 text-green-400 border-green-700',
-    HOLD: 'bg-yellow-900/50 text-yellow-400 border-yellow-700',
-    SELL: 'bg-red-900/50 text-red-400 border-red-700',
+    BUY: 'badge-buy',
+    HOLD: 'badge-hold',
+    SELL: 'badge-sell',
   };
   const sizeClasses = size === 'large' ? 'text-2xl px-4 py-2' : 'text-sm px-2 py-1';
 
   return (
     <span
-      className={`inline-flex items-center font-bold rounded border ${colors[rating]} ${sizeClasses}`}
+      className={`inline-flex items-center font-bold rounded ${colors[rating]} ${sizeClasses}`}
     >
       {rating}
     </span>
@@ -551,7 +551,7 @@ function QualityBar({ score }: { score: number | null }) {
 
   const percentage = score * 100;
   const color =
-    percentage >= 80 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+    percentage >= 80 ? 'bg-success-dot' : percentage >= 50 ? 'bg-warning-dot' : 'bg-danger-dot';
 
   return (
     <div className="space-y-1">

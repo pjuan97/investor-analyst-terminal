@@ -213,7 +213,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                 <td>
                   <button
                     onClick={() => handleRemove(item.id)}
-                    className="text-terminal-muted hover:text-red-400 transition-colors"
+                    className="text-terminal-muted hover:text-danger-semantic transition-colors"
                     title="Remove from watchlist"
                   >
                     <svg

@@ -54,7 +54,7 @@ export function AddTickerForm({ userId }: AddTickerFormProps) {
           required
         />
         {error && (
-          <div className="absolute top-full left-0 mt-1 text-xs text-red-400 whitespace-nowrap">
+          <div className="absolute top-full left-0 mt-1 text-xs text-danger-semantic whitespace-nowrap">
             {error}
           </div>
         )}

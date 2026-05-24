@@ -11,15 +11,15 @@ const config: Config = {
       colors: {
         // Custom colors for the terminal theme
         terminal: {
-          bg: '#0d1117',
-          card: '#161b22',
-          border: '#30363d',
-          text: '#c9d1d9',
-          muted: '#8b949e',
-          accent: '#58a6ff',
-          success: '#3fb950',
-          warning: '#d29922',
-          danger: '#f85149',
+          bg: 'rgb(var(--terminal-bg) / <alpha-value>)',
+          card: 'rgb(var(--terminal-card) / <alpha-value>)',
+          border: 'rgb(var(--terminal-border) / <alpha-value>)',
+          text: 'rgb(var(--terminal-text) / <alpha-value>)',
+          muted: 'rgb(var(--terminal-muted) / <alpha-value>)',
+          accent: 'rgb(var(--terminal-accent) / <alpha-value>)',
+          success: 'rgb(var(--terminal-success) / <alpha-value>)',
+          warning: 'rgb(var(--terminal-warning) / <alpha-value>)',
+          danger: 'rgb(var(--terminal-danger) / <alpha-value>)',
         },
       },
       fontFamily: {

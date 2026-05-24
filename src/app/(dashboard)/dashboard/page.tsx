@@ -220,7 +220,7 @@ export default function DashboardPage() {
                   <tbody>
                     {currentMovers.map((m) => {
                       const isPos = m.changePercent >= 0;
-                      const color = isPos ? 'text-green-400' : 'text-red-400';
+                      const color = isPos ? 'text-positive' : 'text-negative';
                       return (
                         <tr key={m.ticker} className="border-t border-terminal-border/50">
                           <td className="py-1.5">
@@ -294,7 +294,7 @@ export default function DashboardPage() {
                       .sort((a, b) => b.changePercent - a.changePercent)
                       .map((etf) => {
                         const isPos = etf.changePercent >= 0;
-                        const color = isPos ? 'text-green-400' : 'text-red-400';
+                        const color = isPos ? 'text-positive' : 'text-negative';
                         return (
                           <tr
                             key={etf.symbol}
@@ -335,7 +335,7 @@ export default function DashboardPage() {
 
 function IndexCard({ data }: { data: IndexData }) {
   const isPositive = data.change >= 0;
-  const color = isPositive ? 'text-green-400' : 'text-red-400';
+  const color = isPositive ? 'text-positive' : 'text-negative';
   const strokeColor = isPositive ? '#22c55e' : '#ef4444';
   const arrow = isPositive ? '\u25B2' : '\u25BC';
 

@@ -202,7 +202,7 @@ function StatusIcon({ status }: { status: TickerStatus }) {
       );
     case 'success':
       return (
-        <span className="text-green-400">
+        <span className="text-success">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24">
             <path
               stroke="currentColor"
@@ -216,7 +216,7 @@ function StatusIcon({ status }: { status: TickerStatus }) {
       );
     case 'error':
       return (
-        <span className="text-red-400">
+        <span className="text-danger-semantic">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24">
             <path
               stroke="currentColor"

@@ -79,11 +79,11 @@ export function CompanyHeader({
   const getRatingColor = (rating: 'BUY' | 'HOLD' | 'SELL' | null) => {
     switch (rating) {
       case 'BUY':
-        return 'text-green-400';
+        return 'text-success';
       case 'HOLD':
-        return 'text-yellow-400';
+        return 'text-warn';
       case 'SELL':
-        return 'text-red-400';
+        return 'text-danger-semantic';
       default:
         return 'text-terminal-muted';
     }

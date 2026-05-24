@@ -396,13 +396,13 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
           </div>
           <div className="grid grid-cols-2 gap-3 pt-1 border-t border-terminal-border">
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-green-400">&#10003; Positive signals</p>
+              <p className="text-xs font-semibold text-success">&#10003; Positive signals</p>
               <p className="text-xs text-terminal-muted leading-relaxed">
                 {CHART_EXPLANATIONS[chartType].howToRead.positive}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-red-400">&#10007; Warning signs</p>
+              <p className="text-xs font-semibold text-danger-semantic">&#10007; Warning signs</p>
               <p className="text-xs text-terminal-muted leading-relaxed">
                 {CHART_EXPLANATIONS[chartType].howToRead.negative}
               </p>

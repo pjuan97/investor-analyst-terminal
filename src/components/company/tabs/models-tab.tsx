@@ -260,15 +260,15 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
           <h3 className="card-header mb-0">Model Consensus</h3>
           <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-green-500"></span>
+              <span className="w-3 h-3 rounded-full bg-success-dot"></span>
               <span className="text-terminal-muted">{voteCounts.BUY} Buy</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+              <span className="w-3 h-3 rounded-full bg-warning-dot"></span>
               <span className="text-terminal-muted">{voteCounts.HOLD} Hold</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full bg-red-500"></span>
+              <span className="w-3 h-3 rounded-full bg-danger-dot"></span>
               <span className="text-terminal-muted">{voteCounts.SELL} Sell</span>
             </span>
           </div>
@@ -327,16 +327,16 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
             <h4 className="font-medium text-terminal-text mb-2">Confidence Scores</h4>
             <ul className="space-y-1.5 text-terminal-muted">
               <li className="flex items-start gap-2">
-                <span className="text-green-400">•</span>
-                <span><strong className="text-green-400">80%+</strong> Strong conviction</span>
+                <span className="text-success">•</span>
+                <span><strong className="text-success">80%+</strong> Strong conviction</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-yellow-400">•</span>
-                <span><strong className="text-yellow-400">60-80%</strong> Moderate conviction</span>
+                <span className="text-warn">•</span>
+                <span><strong className="text-warn">60-80%</strong> Moderate conviction</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-400">•</span>
-                <span><strong className="text-red-400">&lt;60%</strong> Low conviction / mixed signals</span>
+                <span className="text-danger-semantic">•</span>
+                <span><strong className="text-danger-semantic">&lt;60%</strong> Low conviction / mixed signals</span>
               </li>
             </ul>
           </div>
@@ -415,13 +415,13 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
               )}
             </button>
             {!claudeConfigured && !isLoading && (
-              <span className="text-xs text-yellow-400">Requires ANTHROPIC_API_KEY in settings</span>
+              <span className="text-xs text-warn">Requires ANTHROPIC_API_KEY in settings</span>
             )}
           </div>
 
           {/* Error */}
           {deepError && (
-            <div className="p-3 bg-red-900/20 border border-red-800 rounded text-sm text-red-400">
+            <div className="p-3 alert-error rounded text-sm">
               {deepError}
             </div>
           )}
@@ -581,9 +581,9 @@ function ModelSummaryCard({ icon, name, vote }: { icon: string; name: string; vo
   }
 
   const ratingStyles = {
-    BUY: 'text-green-400 bg-green-400/10 border-green-400/30',
-    HOLD: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
-    SELL: 'text-red-400 bg-red-400/10 border-red-400/30',
+    BUY: 'badge-buy',
+    HOLD: 'badge-hold',
+    SELL: 'badge-sell',
   };
 
   return (
@@ -634,12 +634,12 @@ function ModelDetailCard({
   }
 
   const ratingColors = {
-    BUY: { badge: 'bg-green-500/20 text-green-400 border-green-500/30', bar: 'bg-green-500' },
-    HOLD: { badge: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', bar: 'bg-yellow-500' },
-    SELL: { badge: 'bg-red-500/20 text-red-400 border-red-500/30', bar: 'bg-red-500' },
+    BUY: { badge: 'badge-buy', bar: 'bg-success-dot' },
+    HOLD: { badge: 'badge-hold', bar: 'bg-warning-dot' },
+    SELL: { badge: 'badge-sell', bar: 'bg-danger-dot' },
   };
 
-  const confidenceColor = vote.confidence >= 0.8 ? 'text-green-400' : vote.confidence >= 0.6 ? 'text-yellow-400' : 'text-red-400';
+  const confidenceColor = vote.confidence >= 0.8 ? 'text-success' : vote.confidence >= 0.6 ? 'text-warn' : 'text-danger-semantic';
 
   // Categorize reasons as bullish or bearish based on keywords
   const categorizeReason = (reason: string): 'bullish' | 'bearish' | 'neutral' => {
@@ -713,7 +713,7 @@ function ModelDetailCard({
             <div className="space-y-2">
               {vote.reasons.map((reason, i) => {
                 const category = categorizeReason(reason);
-                const iconColor = category === 'bullish' ? 'text-green-400' : category === 'bearish' ? 'text-red-400' : 'text-terminal-muted';
+                const iconColor = category === 'bullish' ? 'text-success' : category === 'bearish' ? 'text-danger-semantic' : 'text-terminal-muted';
                 const bulletIcon = category === 'bullish' ? '↑' : category === 'bearish' ? '↓' : '•';
 
                 return (

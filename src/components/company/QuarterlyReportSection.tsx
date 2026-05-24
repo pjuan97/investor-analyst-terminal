@@ -82,7 +82,7 @@ export function QuarterlyReportSection({
         <button
           onClick={handleFetch}
           disabled={loading}
-          className="px-4 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="btn btn-primary"
         >
           {loading ? 'Fetching...' : 'Fetch Latest 10-Q'}
         </button>
@@ -90,7 +90,7 @@ export function QuarterlyReportSection({
 
       {/* Error State */}
       {error && (
-        <div className="p-3 rounded-md bg-red-900/20 border border-red-700/30 text-red-400 text-sm">
+        <div className="p-3 rounded-md alert-error text-sm">
           {error}
         </div>
       )}

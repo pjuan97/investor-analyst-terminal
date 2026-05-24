@@ -127,11 +127,11 @@ export function Sidebar() {
         <div className="text-xs text-terminal-muted">
           <p>Data Sources:</p>
           <p className="mt-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+            <span className="inline-block w-2 h-2 rounded-full bg-success-dot mr-1"></span>
             SEC EDGAR
           </p>
           <p>
-            <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+            <span className="inline-block w-2 h-2 rounded-full bg-success-dot mr-1"></span>
             Stooq Prices
           </p>
         </div>

@@ -210,7 +210,7 @@ const columns: Column[] = [
     align: 'right',
     render: (r) => {
       if (r.revenueGrowth === null) return <span className="font-mono text-terminal-muted">—</span>;
-      const color = r.revenueGrowth >= 0 ? 'text-green-400' : 'text-red-400';
+      const color = r.revenueGrowth >= 0 ? 'text-positive' : 'text-negative';
       return <span className={`font-mono ${color}`}>{fmtPct(r.revenueGrowth)}</span>;
     },
   },
