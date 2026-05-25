@@ -398,7 +398,9 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
               className={`px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 ${
                 deepLoading || selectedDeepModels.size === 0 || !claudeConfigured
                   ? 'bg-terminal-muted/20 text-terminal-muted cursor-not-allowed'
-                  : 'bg-terminal-accent text-terminal-bg hover:bg-terminal-accent/90'
+                  : deepAnalysis
+                    ? 'border border-terminal-border text-terminal-text hover:bg-terminal-bg'
+                    : 'bg-terminal-accent text-terminal-bg hover:bg-terminal-accent/90'
               }`}
             >
               {deepLoading ? (
@@ -410,10 +412,23 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
                     ? `Analyzing with ${DEEP_MODELS.find((m) => m.id === currentDeepModel)?.name || currentDeepModel}...`
                     : 'Analyzing...'}
                 </>
+              ) : deepAnalysis ? (
+                'Re-run Analysis'
               ) : (
                 'Run Analysis'
               )}
             </button>
+            {deepAnalysis?.generatedAt && !deepLoading && (
+              <span className="text-xs text-terminal-muted">
+                Last analyzed: {new Date(deepAnalysis.generatedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
+            )}
             {!claudeConfigured && !isLoading && (
               <span className="text-xs text-warn">Requires ANTHROPIC_API_KEY in settings</span>
             )}
@@ -430,13 +445,6 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
         {/* Deep Analysis Results */}
         {deepAnalysis && (
           <div className="mt-6 pt-4 border-t border-terminal-border space-y-3">
-            {deepAnalysis.generatedAt && (
-              <p className="text-xs text-terminal-muted">
-                Generated {new Date(deepAnalysis.generatedAt).toLocaleDateString()} at{' '}
-                {new Date(deepAnalysis.generatedAt).toLocaleTimeString()}
-              </p>
-            )}
-
             {/* Individual Model Results */}
             {DEEP_MODELS.map((model) => {
               const content = deepAnalysis[model.id as keyof DeepAnalysis];

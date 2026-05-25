@@ -79,6 +79,9 @@ model Company {
   ipoDate     DateTime? @map("ipo_date")
   logoUrl     String?   @map("logo_url")
 
+  // ETF flag
+  isEtf        Boolean  @default(false) @map("is_etf")
+
   // Data quality tracking
   lastSecFiling     DateTime? @map("last_sec_filing")
   lastPriceUpdate   DateTime? @map("last_price_update")
@@ -95,8 +98,42 @@ model Company {
   metrics             MetricsAnnual[]
   recommendations     RecommendationDaily[]
   quarterlyReports    QuarterlyReport[]
+  etfDetails          EtfDetails?
 
   @@map("companies")
+}
+
+// ============================================================================
+// ETF DETAILS
+// ============================================================================
+
+model EtfDetails {
+  id                String   @id @default(uuid())
+  companyId         String   @unique @map("company_id")
+
+  // From Alpha Vantage ETF_PROFILE
+  netAssets         Decimal? @map("net_assets") @db.Decimal(20, 2)
+  expenseRatio      Decimal? @map("expense_ratio") @db.Decimal(8, 6)
+  dividendYield     Decimal? @map("dividend_yield") @db.Decimal(8, 6)
+  portfolioTurnover Decimal? @map("portfolio_turnover") @db.Decimal(8, 4)
+  inceptionDate     DateTime? @map("inception_date")
+  isLeveraged       Boolean  @default(false) @map("is_leveraged")
+  assetClass        String?  @map("asset_class")
+
+  // Top holdings stored as JSON array
+  // [{ symbol, name, weight }]
+  topHoldings       Json?    @map("top_holdings")
+
+  // Sector breakdown as JSON
+  // [{ sector, weight }]
+  sectorBreakdown   Json?    @map("sector_breakdown")
+
+  // Metadata
+  fetchedAt         DateTime @map("fetched_at")
+
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("etf_details")
 }
 
 // ============================================================================
