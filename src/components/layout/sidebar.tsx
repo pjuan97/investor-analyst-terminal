@@ -81,6 +81,21 @@ const navItems = [
     ),
   },
   {
+    name: 'ETF Overlap',
+    href: '/etf/overlap',
+    icon: (
+      <svg
+        className="w-5 h-5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <circle cx="9" cy="12" r="6" strokeWidth={1.5} />
+        <circle cx="15" cy="12" r="6" strokeWidth={1.5} />
+      </svg>
+    ),
+  },
+  {
     name: 'Settings',
     href: '/settings',
     icon: (
