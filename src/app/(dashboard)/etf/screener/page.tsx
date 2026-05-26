@@ -8,6 +8,7 @@ interface EtfScreenerResult {
   ticker: string;
   name: string;
   sector: string | null;
+  category: string | null;
   netAssets: number | null;
   expenseRatio: number | null;
   dividendYield: number | null;
@@ -92,6 +93,16 @@ const columns: Column[] = [
     render: (r) => (
       <span className="text-terminal-text truncate max-w-[200px] inline-block">
         {r.name}
+      </span>
+    ),
+  },
+  {
+    key: 'category',
+    label: 'Category',
+    sortKey: 'category',
+    render: (r: EtfScreenerResult) => (
+      <span className="text-terminal-muted text-xs truncate max-w-[140px] inline-block">
+        {r.category || '—'}
       </span>
     ),
   },

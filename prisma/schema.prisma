@@ -119,6 +119,7 @@ model EtfDetails {
   inceptionDate     DateTime? @map("inception_date")
   isLeveraged       Boolean  @default(false) @map("is_leveraged")
   assetClass        String?  @map("asset_class")
+  category          String?
 
   // Top holdings stored as JSON array
   // [{ symbol, name, weight }]

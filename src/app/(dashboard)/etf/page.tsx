@@ -54,6 +54,22 @@ export default function EtfPage() {
     fetchEtfs();
   }, [fetchEtfs]);
 
+  const handleRemove = async (etfTicker: string) => {
+    if (!confirm(`Remove ${etfTicker} from ETF Watchlist?`)) return;
+
+    // Optimistic update
+    setEtfs((prev) => prev.filter((e) => e.ticker !== etfTicker));
+
+    try {
+      const res = await fetch(`/api/etf/${etfTicker}`, { method: 'DELETE' });
+      if (!res.ok) {
+        await fetchEtfs(); // Revert on failure
+      }
+    } catch {
+      await fetchEtfs(); // Revert on failure
+    }
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticker.trim()) return;
@@ -140,6 +156,7 @@ export default function EtfPage() {
                   <th className="text-right">AUM</th>
                   <th className="text-right">Expense Ratio</th>
                   <th className="text-right">Div Yield</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -174,6 +191,27 @@ export default function EtfPage() {
                       </td>
                       <td className="text-right font-mono text-terminal-text">
                         {formatPct(etf.dividendYield)}
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleRemove(etf.ticker)}
+                          className="text-terminal-muted hover:text-danger-semantic transition-colors"
+                          title="Remove from ETF Watchlist"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
                   );

@@ -115,6 +115,7 @@ export async function GET(request: NextRequest) {
       inceptionDate: 'e.inception_date',
       isLeveraged: 'e.is_leveraged',
       assetClass: 'e.asset_class',
+      category: 'e.category',
       numHoldings: '"numHoldings"',
     };
 
@@ -129,6 +130,7 @@ export async function GET(request: NextRequest) {
         c.ticker,
         c.name,
         c.sector,
+        e.category,
         e.net_assets           AS "netAssets",
         e.expense_ratio        AS "expenseRatio",
         e.dividend_yield       AS "dividendYield",
@@ -166,6 +168,7 @@ export async function GET(request: NextRequest) {
           key !== 'name' &&
           key !== 'sector' &&
           key !== 'assetClass' &&
+          key !== 'category' &&
           key !== 'inceptionDate'
         ) {
           const n = Number(val);

@@ -4,6 +4,18 @@ import { prisma } from '@/lib/db';
 import { getAlphaVantageProvider } from '@/lib/providers/alphavantage';
 import { getYahooFinanceProvider } from '@/lib/providers/prices/yahoo';
 
+function inferAssetClass(category: string | null | undefined): string | null {
+  if (!category) return null;
+  const c = category.toLowerCase();
+  if (/bond|fixed|treasury|income|credit|government/.test(c)) return 'Bond';
+  if (/commodit|gold|silver|oil|energy|metal/.test(c)) return 'Commodity';
+  if (/currency/.test(c)) return 'Currency';
+  if (/real estate|reit/.test(c)) return 'Real Estate';
+  if (/multi.asset|allocation|balanced/.test(c)) return 'Multi-Asset';
+  if (/futures|managed futures|long.short|market neutral|merger arb|arbitrage|macro|hedge|multi.strategy|absolute return|bear|inverse|leveraged|buffer|defined outcome|systematic trend|alternative/.test(c)) return 'Alternative';
+  return 'Equity';
+}
+
 // Helper to serialize Prisma objects
 function serialize<T>(obj: T): T {
   return JSON.parse(
@@ -141,6 +153,20 @@ export async function POST(
       );
     }
 
+    // Infer asset class from Yahoo Finance fundProfile
+    let inferredAssetClass: string | null = null;
+    let yahooCategory: string | null = null;
+    try {
+      const summary = await yf.quoteSummary(upperTicker, { modules: ['fundProfile'] });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const categoryName = (summary as any)?.fundProfile?.categoryName as string | undefined;
+      yahooCategory = categoryName || null;
+      inferredAssetClass = inferAssetClass(categoryName);
+      console.log(`Yahoo fundProfile for ${upperTicker}: category="${categoryName}" → assetClass="${inferredAssetClass}"`);
+    } catch (err) {
+      console.log(`Yahoo quoteSummary fundProfile failed for ${upperTicker}, skipping:`, err);
+    }
+
     // Create company record
     const company = await prisma.company.create({
       data: {
@@ -168,7 +194,8 @@ export async function POST(
             portfolioTurnover: profile.portfolioTurnover,
             inceptionDate: profile.inceptionDate ? new Date(profile.inceptionDate) : null,
             isLeveraged: profile.isLeveraged,
-            assetClass: profile.assetClass,
+            assetClass: profile.assetClass || inferredAssetClass || null,
+            category: yahooCategory,
             topHoldings: profile.topHoldings as unknown as object,
             sectorBreakdown: profile.sectorBreakdown as unknown as object,
             fetchedAt: new Date(),
@@ -238,6 +265,44 @@ export async function POST(
     console.error('ETF creation stack:', error instanceof Error ? error.stack : '');
     return NextResponse.json(
       { error: 'Failed to add ETF' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE — Remove ETF and all related data
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ ticker: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { ticker } = await params;
+    const upperTicker = ticker.toUpperCase();
+
+    const company = await prisma.company.findUnique({
+      where: { ticker: upperTicker },
+      include: { etfDetails: true },
+    });
+
+    if (!company || !company.isEtf) {
+      return NextResponse.json({ error: 'ETF not found' }, { status: 404 });
+    }
+
+    // Cascade delete handles etfDetails, prices, recommendations, watchlists, etc.
+    await prisma.company.delete({
+      where: { id: company.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('ETF delete error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete ETF' },
       { status: 500 }
     );
   }
