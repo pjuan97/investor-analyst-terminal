@@ -16,12 +16,23 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 // ── Types ──────────────────────────────────────────────────────────
+interface TopSector {
+  sector: string;
+  weight: number;
+}
+
 interface FundInfo {
   ticker: string;
   name: string;
   totalHoldings: number;
   aum: number | null;
   expenseRatio: number | null;
+  dividendYield: number | null;
+  portfolioTurnover: number | null;
+  inceptionDate: string | null;
+  isLeveraged: boolean;
+  assetClass: string | null;
+  topSectors: TopSector[];
 }
 
 interface OverlapStats {
@@ -162,6 +173,178 @@ function VennDiagram({
         OVERLAP
       </text>
     </svg>
+  );
+}
+
+// ── Side by Side Comparison ───────────────────────────────────────
+function SideBySideComparison({
+  fund1,
+  fund2,
+}: {
+  fund1: FundInfo;
+  fund2: FundInfo;
+}) {
+  const [open, setOpen] = useState(true);
+
+  function formatDate(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+
+  function topSectorLabel(sectors: TopSector[]): string {
+    if (!sectors || sectors.length === 0) return '—';
+    const s = sectors[0];
+    return `${s.sector} ${(s.weight * 100).toFixed(1)}%`;
+  }
+
+  type Favor = 1 | 2 | null;
+
+  interface Row {
+    label: string;
+    v1: string;
+    v2: string;
+    favor: Favor;
+  }
+
+  const lowerBetter = (a: number | null, b: number | null): Favor => {
+    if (a === null || b === null) return null;
+    if (a < b) return 1;
+    if (b < a) return 2;
+    return null;
+  };
+
+  const higherBetter = (a: number | null, b: number | null): Favor => {
+    if (a === null || b === null) return null;
+    if (a > b) return 1;
+    if (b > a) return 2;
+    return null;
+  };
+
+  const leveragedFavor = (): Favor => {
+    if (!fund1.isLeveraged && fund2.isLeveraged) return 1;
+    if (!fund2.isLeveraged && fund1.isLeveraged) return 2;
+    return null;
+  };
+
+  const rows: Row[] = [
+    {
+      label: 'Asset Class',
+      v1: fund1.assetClass ?? '—',
+      v2: fund2.assetClass ?? '—',
+      favor: null,
+    },
+    {
+      label: 'Expense Ratio',
+      v1: formatPct(fund1.expenseRatio),
+      v2: formatPct(fund2.expenseRatio),
+      favor: lowerBetter(fund1.expenseRatio, fund2.expenseRatio),
+    },
+    {
+      label: 'AUM',
+      v1: formatAum(fund1.aum),
+      v2: formatAum(fund2.aum),
+      favor: higherBetter(fund1.aum, fund2.aum),
+    },
+    {
+      label: 'Dividend Yield',
+      v1: formatPct(fund1.dividendYield),
+      v2: formatPct(fund2.dividendYield),
+      favor: null,
+    },
+    {
+      label: 'Portfolio Turnover',
+      v1: formatPct(fund1.portfolioTurnover),
+      v2: formatPct(fund2.portfolioTurnover),
+      favor: lowerBetter(fund1.portfolioTurnover, fund2.portfolioTurnover),
+    },
+    {
+      label: 'Total Holdings',
+      v1: String(fund1.totalHoldings),
+      v2: String(fund2.totalHoldings),
+      favor: higherBetter(fund1.totalHoldings, fund2.totalHoldings),
+    },
+    {
+      label: 'Inception Date',
+      v1: formatDate(fund1.inceptionDate),
+      v2: formatDate(fund2.inceptionDate),
+      favor: null,
+    },
+    {
+      label: 'Leveraged',
+      v1: fund1.isLeveraged ? 'Yes' : 'No',
+      v2: fund2.isLeveraged ? 'Yes' : 'No',
+      favor: leveragedFavor(),
+    },
+    {
+      label: 'Top Sector',
+      v1: topSectorLabel(fund1.topSectors),
+      v2: topSectorLabel(fund2.topSectors),
+      favor: null,
+    },
+  ];
+
+  return (
+    <div className="card">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full p-4 flex items-center justify-between text-left"
+      >
+        <h2 className="text-sm font-semibold text-terminal-text uppercase tracking-wider">
+          Side by Side Comparison
+        </h2>
+        <svg
+          className={`w-4 h-4 text-terminal-muted transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-t border-terminal-border">
+                <th className="text-left px-4 py-2 text-xs text-terminal-muted uppercase tracking-wider font-medium">
+                  Metric
+                </th>
+                <th className="text-right px-4 py-2 text-xs uppercase tracking-wider font-medium text-terminal-accent">
+                  {fund1.ticker}
+                </th>
+                <th className="text-right px-4 py-2 text-xs uppercase tracking-wider font-medium text-terminal-accent">
+                  {fund2.ticker}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr
+                  key={row.label}
+                  className={`border-t border-terminal-border ${i % 2 === 0 ? 'bg-terminal-bg/50' : ''}`}
+                >
+                  <td className="px-4 py-2 text-terminal-muted">{row.label}</td>
+                  <td className="px-4 py-2 text-right font-mono text-terminal-text">
+                    {row.v1}
+                    {row.favor === 1 && (
+                      <span className="ml-2 text-terminal-success">&#10003;</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono text-terminal-text">
+                    {row.v2}
+                    {row.favor === 2 && (
+                      <span className="ml-2 text-terminal-success">&#10003;</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -441,7 +624,10 @@ export default function EtfOverlapPage() {
             </div>
           </div>
 
-          {/* Row 2 — Sector Drift */}
+          {/* Row 2 — Side by Side Comparison */}
+          <SideBySideComparison fund1={data.fund1} fund2={data.fund2} />
+
+          {/* Row 3 — Sector Drift */}
           {sectorChartData && sectorChartData.length > 0 && (
             <div className="card p-6">
               <h2 className="text-sm font-semibold text-terminal-text mb-1 uppercase tracking-wider">
