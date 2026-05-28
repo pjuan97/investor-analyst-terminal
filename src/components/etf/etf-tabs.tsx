@@ -27,6 +27,7 @@ interface EtfCompany {
   ticker: string;
   name: string;
   exchange: string | null;
+  lastRefreshedAt: string | null;
 }
 
 interface EtfDetailsData {
@@ -302,6 +303,7 @@ function EtfHeader({
   prices: PriceData[];
 }) {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
   const latest = prices[0];
   const prev = prices[1];
   const currentPrice = toNum(latest?.close);
@@ -310,6 +312,16 @@ function EtfHeader({
   const change = currentPrice && prevPrice ? currentPrice - prevPrice : null;
   const changePct = change && prevPrice ? (change / prevPrice) * 100 : null;
   const isPositive = (change ?? 0) >= 0;
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch(`/api/etf/${company.ticker}/refresh`, { method: 'POST' });
+      router.refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -347,8 +359,41 @@ function EtfHeader({
             <span className="text-xs text-terminal-muted bg-terminal-card px-2 py-0.5 rounded border border-terminal-border">
               ETF
             </span>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-1.5 rounded border border-terminal-border bg-terminal-card hover:bg-terminal-border transition-colors"
+              title="Refresh ETF data"
+            >
+              <svg
+                className={`w-4 h-4 text-terminal-muted ${refreshing ? 'animate-spin' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
           </div>
-          <p className="text-terminal-muted mt-1">{company.name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-terminal-muted">{company.name}</p>
+            {company.lastRefreshedAt && (
+              <span className="text-xs text-terminal-muted">
+                Last refreshed:{' '}
+                {new Date(company.lastRefreshedAt).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-terminal-text font-mono">

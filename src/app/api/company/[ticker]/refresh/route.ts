@@ -421,6 +421,11 @@ export async function POST(
       }
     }
 
+    await prisma.company.update({
+      where: { id: company.id },
+      data: { lastRefreshedAt: new Date() },
+    });
+
     return NextResponse.json({
       success: true,
       ticker: upperTicker,

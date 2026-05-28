@@ -49,6 +49,7 @@ export async function GET() {
         netAssets: etf.etfDetails?.netAssets ? Number(etf.etfDetails.netAssets) : null,
         expenseRatio: etf.etfDetails?.expenseRatio ? Number(etf.etfDetails.expenseRatio) : null,
         dividendYield: etf.etfDetails?.dividendYield ? Number(etf.etfDetails.dividendYield) : null,
+        lastRefreshedAt: etf.lastRefreshedAt,
         createdAt: etf.createdAt,
       };
     });

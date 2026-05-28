@@ -37,6 +37,7 @@ export default async function WatchlistPage() {
     recommendation: item.company.recommendations[0]?.rating ?? null,
     confidence: item.company.recommendations[0]?.confidence ? Number(item.company.recommendations[0].confidence) : null,
     lastUpdate: item.company.recommendations[0]?.createdAt ?? null,
+    lastRefreshedAt: item.company.lastRefreshedAt ?? null,
     dataQuality: item.company.dataQualityScore ? Number(item.company.dataQualityScore) : null,
   }));
 

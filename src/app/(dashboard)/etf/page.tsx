@@ -13,6 +13,7 @@ interface EtfRow {
   netAssets: number | null;
   expenseRatio: number | null;
   dividendYield: number | null;
+  lastRefreshedAt: string | null;
   createdAt: string;
 }
 
@@ -35,6 +36,9 @@ export default function EtfPage() {
   const [ticker, setTicker] = useState('');
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
+  const [selectedEtfs, setSelectedEtfs] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState({ current: 0, total: 0 });
 
   const fetchEtfs = useCallback(async () => {
     try {
@@ -59,6 +63,11 @@ export default function EtfPage() {
 
     // Optimistic update
     setEtfs((prev) => prev.filter((e) => e.ticker !== etfTicker));
+    setSelectedEtfs((prev) => {
+      const next = new Set(prev);
+      next.delete(etfTicker);
+      return next;
+    });
 
     try {
       const res = await fetch(`/api/etf/${etfTicker}`, { method: 'DELETE' });
@@ -95,6 +104,36 @@ export default function EtfPage() {
     } finally {
       setAdding(false);
     }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedEtfs.size === etfs.length) {
+      setSelectedEtfs(new Set());
+    } else {
+      setSelectedEtfs(new Set(etfs.map((e) => e.ticker)));
+    }
+  };
+
+  const handleRefreshSelected = async () => {
+    const tickers = Array.from(selectedEtfs);
+    if (tickers.length === 0) return;
+
+    setRefreshing(true);
+    setRefreshProgress({ current: 0, total: tickers.length });
+
+    for (let i = 0; i < tickers.length; i++) {
+      setRefreshProgress({ current: i + 1, total: tickers.length });
+      try {
+        await fetch(`/api/etf/${tickers[i]}/refresh`, { method: 'POST' });
+      } catch {
+        console.error(`Failed to refresh ${tickers[i]}`);
+      }
+    }
+
+    setRefreshing(false);
+    setSelectedEtfs(new Set());
+    setRefreshProgress({ current: 0, total: 0 });
+    await fetchEtfs();
   };
 
   return (
@@ -135,6 +174,37 @@ export default function EtfPage() {
         </form>
       </div>
 
+      {/* Toolbar */}
+      {etfs.length > 0 && selectedEtfs.size > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-terminal-muted">
+            {selectedEtfs.size} selected
+          </div>
+          <button
+            onClick={handleRefreshSelected}
+            disabled={refreshing}
+            className="px-4 py-2 bg-terminal-accent text-terminal-bg rounded font-medium hover:bg-terminal-accent/90 transition-colors flex items-center gap-2"
+          >
+            <svg
+              className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {refreshing
+              ? `Refreshing ${refreshProgress.current}/${refreshProgress.total}...`
+              : `Refresh Selected (${selectedEtfs.size})`}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="card">
         {loading ? (
@@ -149,6 +219,14 @@ export default function EtfPage() {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th className="w-10">
+                    <input
+                      type="checkbox"
+                      checked={etfs.length > 0 && selectedEtfs.size === etfs.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-terminal-border bg-terminal-bg text-terminal-accent focus:ring-terminal-accent focus:ring-offset-0"
+                    />
+                  </th>
                   <th>Ticker</th>
                   <th>Name</th>
                   <th className="text-right">Price</th>
@@ -156,6 +234,7 @@ export default function EtfPage() {
                   <th className="text-right">AUM</th>
                   <th className="text-right">Expense Ratio</th>
                   <th className="text-right">Div Yield</th>
+                  <th>Last Refresh</th>
                   <th></th>
                 </tr>
               </thead>
@@ -164,6 +243,19 @@ export default function EtfPage() {
                   const isPos = (etf.changePercent ?? 0) >= 0;
                   return (
                     <tr key={etf.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedEtfs.has(etf.ticker)}
+                          onChange={(e) => {
+                            const next = new Set(selectedEtfs);
+                            if (e.target.checked) next.add(etf.ticker);
+                            else next.delete(etf.ticker);
+                            setSelectedEtfs(next);
+                          }}
+                          className="w-4 h-4 rounded border-terminal-border bg-terminal-bg text-terminal-accent focus:ring-terminal-accent focus:ring-offset-0"
+                        />
+                      </td>
                       <td>
                         <Link
                           href={`/etf/${etf.ticker}`}
@@ -191,6 +283,15 @@ export default function EtfPage() {
                       </td>
                       <td className="text-right font-mono text-terminal-text">
                         {formatPct(etf.dividendYield)}
+                      </td>
+                      <td className="text-sm text-terminal-muted">
+                        {etf.lastRefreshedAt
+                          ? new Date(etf.lastRefreshedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : '—'}
                       </td>
                       <td>
                         <button

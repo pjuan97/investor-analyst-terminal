@@ -14,6 +14,7 @@ interface WatchlistItem {
   recommendation: 'BUY' | 'HOLD' | 'SELL' | null;
   confidence: number | null;
   lastUpdate: Date | null;
+  lastRefreshedAt: Date | null;
   dataQuality: number | null;
 }
 
@@ -209,7 +210,14 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                   {formatConfidence(item.confidence)}
                 </td>
                 <td>{getQualityBadge(item.dataQuality)}</td>
-                <td className="text-terminal-muted">{formatDate(item.lastUpdate)}</td>
+                <td className="text-terminal-muted">
+                  <div>{formatDate(item.lastUpdate)}</div>
+                  {item.lastRefreshedAt && (
+                    <div className="text-xs text-terminal-muted">
+                      Refreshed: {formatDate(item.lastRefreshedAt)}
+                    </div>
+                  )}
+                </td>
                 <td>
                   <button
                     onClick={() => handleRemove(item.id)}

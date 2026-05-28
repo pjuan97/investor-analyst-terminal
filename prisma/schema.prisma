@@ -85,6 +85,7 @@ model Company {
   // Data quality tracking
   lastSecFiling     DateTime? @map("last_sec_filing")
   lastPriceUpdate   DateTime? @map("last_price_update")
+  lastRefreshedAt   DateTime? @map("last_refreshed_at")
   dataQualityScore  Float?    @map("data_quality_score") // 0-1
   dataQualityNotes  String?   @map("data_quality_notes")
 
