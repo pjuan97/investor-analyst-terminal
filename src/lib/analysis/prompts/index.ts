@@ -1083,6 +1083,49 @@ These metrics are standard benchmarks used in SaaS/tech investment community. NO
 - FCF Margin >= 15-20% (mature SaaS). Label: "Industry benchmark — not Seessel criterion."
 </section>
 
+<section id="input_completeness">
+Use the KPI Data Map above as a strict checklist.
+
+0) Jurisdiction / listing check:
+   - If the company is US-listed or uses US GAAP:
+     * Refer to US docs (10-K, 10-Q, DEF 14A) as primary document types.
+   - If the company is listed outside the US:
+     * Do NOT block the analysis.
+     * Explain that you need the same underlying statements as in the KPI Data Map
+       (income statement, balance sheet, cash flow, changes in equity, notes, MD&A,
+       and a proxy-equivalent for insider ownership), using that country's standard filings.
+     * You may use general knowledge ONLY to identify typical filing names and main
+       regulator/registry for that jurisdiction, but NOT to pull any financial numbers.
+
+1) For each KPI, list:
+   - Required raw data fields.
+   - Expected documents and specific statements/sections.
+
+2) Mandatory inputs summary:
+   * 5-10 years of annual reports with full financial statements and notes/MD&A.
+   * Most recent quarterly report if available.
+   * Proxy statement (DEF 14A or equivalent) for insider ownership and SBC data.
+   * IR materials / earnings call transcripts for customer metrics (NRR, churn, CAC/LTV).
+   * Market cap or price + shares as of a specific date, and the user's hurdle rate.
+
+3) If any required inputs are missing for any KPI:
+   - Identify the KPI(s) and exactly which fields/documents are missing.
+   - Mark as [DATA UNAVAILABLE] and continue — do NOT stop the analysis.
+   - Flag clearly which KPIs are based on incomplete data.
+
+4) If the company has a shorter history (e.g., recently IPO'd):
+   - Clearly mark affected KPIs as "limited data" and explain the limitation.
+   - Proceed with available data for other KPIs.
+
+5) Form 4 filings: for real-time insider transaction tracking, reference Form 4 filings
+   if available. Use proxy DEF 14A as primary source for insider ownership snapshot.
+
+6) R&D Productivity Signal (KPI 6 supplement):
+   Revenue Growth Rate / R&D as % of Revenue — track trend over 3-5 years.
+   - If R&D % stable or declining while revenue growth accelerates: R&D is productive.
+   - If R&D % rising while growth is flat: potential R&D efficiency problem.
+</section>
+
 <section id="financial_analysis">
 For each KPI in the KPI Data Map:
 1. Use specified raw data fields from user-provided documents.
