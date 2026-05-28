@@ -15,12 +15,14 @@ import { analyzeBuffett, type BuffettHistoricalData } from './buffett';
 import { analyzeGreenblatt, type GreenblattHistoricalData } from './greenblatt';
 import { analyzeFisher, type FisherHistoricalData } from './fisher';
 import { analyzeLynch, type LynchHistoricalData } from './lynch';
+import { analyzeSeesselAsVote, type SeesselHistoricalData } from './seessel';
 
 // Re-export individual models
 export { analyzeBuffett } from './buffett';
 export { analyzeGreenblatt } from './greenblatt';
 export { analyzeFisher } from './fisher';
 export { analyzeLynch } from './lynch';
+export { analyzeSeesselAsVote } from './seessel';
 
 /**
  * Unified input for all models
@@ -77,6 +79,13 @@ interface UnifiedMetricsInput {
 
   // Optional - for Lynch
   dividendYield?: number | null;
+
+  // Optional - for Seessel BMP
+  revenueGrowthCagr3y?: number | null;
+  rdAsPercentRevenue?: number | null;
+  sbcAsPercentRevenue?: number | null;
+  netDilutionPercent?: number | null;
+  ppeTotalAssetsRatio?: number | null;
 }
 
 /**
@@ -111,17 +120,24 @@ export function runAllModels(
     historical: historical.map(mapToLynchInput),
   };
 
+  const seesselData: SeesselHistoricalData = {
+    current: mapToSeesselInput(current),
+    historical: historical.map(mapToSeesselInput),
+  };
+
   // Run all models
   const buffettVote = analyzeBuffett(buffettData);
   const greenblattVote = analyzeGreenblatt(greenblattData);
   const fisherVote = analyzeFisher(fisherData);
   const lynchVote = analyzeLynch(lynchData);
+  const seesselVote = analyzeSeesselAsVote(seesselData);
 
   const votes: ModelVotes = {
     buffett: buffettVote,
     greenblatt: greenblattVote,
     growth: fisherVote, // Fisher is the "growth" model
     lynch: lynchVote,
+    seessel: seesselVote,
   };
 
   // Aggregate into final recommendation
@@ -224,6 +240,23 @@ function mapToLynchInput(data: UnifiedMetricsInput) {
     netMargin: data.netMargin,
     roe: data.roe,
     operatingMargin: data.operatingMargin,
+  };
+}
+
+/**
+ * Map unified input to Seessel-specific input
+ */
+function mapToSeesselInput(data: UnifiedMetricsInput) {
+  return {
+    fiscalYear: data.fiscalYear,
+    revenueGrowthCagr3y: data.revenueGrowthCagr3y ?? null,
+    grossMargin: data.grossMargin,
+    fcfMargin: data.fcfMargin,
+    rdAsPercentRevenue: data.rdAsPercentRevenue ?? null,
+    sbcAsPercentRevenue: data.sbcAsPercentRevenue ?? null,
+    netDilutionPercent: data.netDilutionPercent ?? null,
+    evToFcf: data.evToFcf,
+    ppeTotalAssetsRatio: data.ppeTotalAssetsRatio ?? null,
   };
 }
 
@@ -374,6 +407,12 @@ function generateExplanations(
   if (votes.lynch) {
     sections.push(`LYNCH (GARP): ${votes.lynch.rating} (${Math.round(votes.lynch.confidence * 100)}% confidence)`);
     sections.push(`  Key factors: ${votes.lynch.reasons.slice(0, 3).join('; ')}`);
+  }
+
+  // Seessel analysis
+  if (votes.seessel) {
+    sections.push(`SEESSEL (BMP): ${votes.seessel.rating} (${Math.round(votes.seessel.confidence * 100)}% confidence)`);
+    sections.push(`  Key factors: ${votes.seessel.reasons.slice(0, 3).join('; ')}`);
   }
 
   const explanationFull = sections.join('\n\n');

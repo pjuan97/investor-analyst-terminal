@@ -136,6 +136,9 @@ export async function POST(request: NextRequest) {
                   totalDebt: statement.totalDebt,
                   operatingCashFlow: statement.operatingCashFlow,
                   freeCashFlow: statement.freeCashFlow,
+                  researchAndDevelopment: statement.researchAndDevelopment,
+                  sellingGeneralAdmin: statement.sellingGeneralAdmin,
+                  stockBasedCompensation: statement.stockBasedCompensation,
                   dataSource: statement.dataSource,
                   dataQuality: statement.dataQuality,
                   missingFields: statement.missingFields,
@@ -168,6 +171,9 @@ export async function POST(request: NextRequest) {
                   operatingCashFlow: statement.operatingCashFlow,
                   capitalExpenditure: statement.capitalExpenditure,
                   freeCashFlow: statement.freeCashFlow,
+                  researchAndDevelopment: statement.researchAndDevelopment,
+                  sellingGeneralAdmin: statement.sellingGeneralAdmin,
+                  stockBasedCompensation: statement.stockBasedCompensation,
                   dataSource: statement.dataSource,
                   dataQuality: statement.dataQuality,
                   missingFields: statement.missingFields,
@@ -202,6 +208,7 @@ export async function POST(request: NextRequest) {
           });
 
           if (metricsRecords.length > 0) {
+            // Seessel fields are left null in cron — computed on-the-fly in /recommend
             const unifiedMetrics: UnifiedMetricsInput[] = metricsRecords.map((m) => ({
               fiscalYear: m.fiscalYear,
               grossMargin: m.grossMargin ? Number(m.grossMargin) : null,

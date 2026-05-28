@@ -142,6 +142,20 @@ export const XBRL_TAG_MAPPING: Record<string, string[]> = {
     'PaymentsForRepurchaseOfCommonStock',
     'StockRepurchasedAndRetiredDuringPeriodValue',
   ],
+
+  // Additional detail
+  researchAndDevelopment: [
+    'ResearchAndDevelopmentExpense',
+    'ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost',
+  ],
+  sellingGeneralAdmin: [
+    'SellingGeneralAndAdministrativeExpense',
+    'GeneralAndAdministrativeExpense',
+  ],
+  stockBasedCompensation: [
+    'ShareBasedCompensation',
+    'AllocatedShareBasedCompensationExpense',
+  ],
 };
 
 // ============================================================================

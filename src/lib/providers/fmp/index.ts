@@ -30,6 +30,8 @@ interface FmpStableIncomeStatement {
   epsDiluted: number;
   weightedAverageShsOut: number;
   weightedAverageShsOutDil: number;
+  researchAndDevelopmentExpenses?: number;
+  sellingGeneralAndAdministrativeExpenses?: number;
 }
 
 interface FmpStableBalanceSheet {
@@ -64,6 +66,7 @@ interface FmpStableCashFlow {
   commonStockRepurchased: number;
   commonDividendsPaid: number;
   freeCashFlow?: number;
+  stockBasedCompensation?: number;
 }
 
 // ============================================================================
@@ -284,6 +287,8 @@ export class FmpProvider implements FinancialDataProvider {
       operatingIncome: income.operatingIncome ?? null,
       interestExpense: income.interestExpense ?? null,
       netIncome: income.netIncome ?? null,
+      researchAndDevelopment: income.researchAndDevelopmentExpenses ?? null,
+      sellingGeneralAdmin: income.sellingGeneralAndAdministrativeExpenses ?? null,
 
       // Per Share
       sharesOutstanding: income.weightedAverageShsOut ?? null,
@@ -321,6 +326,7 @@ export class FmpProvider implements FinancialDataProvider {
       freeCashFlow,
       dividendsPaid: cashFlow?.commonDividendsPaid ?? null,
       shareRepurchases: cashFlow?.commonStockRepurchased ?? null,
+      stockBasedCompensation: cashFlow?.stockBasedCompensation ?? null,
 
       // Metadata
       dataSource: 'fmp',

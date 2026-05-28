@@ -19,6 +19,7 @@ interface DeepAnalysis {
   fisher?: string;
   greenblatt?: string;
   lynch?: string;
+  seessel?: string;
   summary?: string;
   generatedAt?: string;
 }
@@ -28,6 +29,7 @@ const DEEP_MODELS = [
   { id: 'fisher', name: 'Philip Fisher', icon: '📈' },
   { id: 'greenblatt', name: 'Joel Greenblatt', icon: '🎯' },
   { id: 'lynch', name: 'Peter Lynch', icon: '⚖️' },
+  { id: 'seessel', name: 'Adam Seessel (BMP)', icon: '📊' },
 ] as const;
 
 interface ModelsTabProps {
@@ -50,6 +52,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
   const [currentDeepModel, setCurrentDeepModel] = useState<string | null>(null);
   const [deepError, setDeepError] = useState<string | null>(null);
   const [hurdleRate, setHurdleRate] = useState(10);
+  const [nrrValue, setNrrValue] = useState(0);
   const [claudeConfigured, setClaudeConfigured] = useState(false);
   const [expandedDeepModels, setExpandedDeepModels] = useState<Set<string>>(new Set());
 
@@ -160,6 +163,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
         body: JSON.stringify({
           models: modelsToRun,
           hurdleRate: hurdleRate / 100,
+          ...(nrrValue > 0 ? { nrr: nrrValue } : {}),
         }),
       });
 
@@ -244,6 +248,14 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
       description: 'Growth At Reasonable Price. Uses PEG ratio and stock categorization.',
       vote: modelVotes.lynch,
     },
+    {
+      id: 'seessel',
+      name: 'Adam Seessel',
+      subtitle: 'BMP Framework',
+      icon: '📊',
+      description: 'Business-Management-Price. Focuses on asset-light digital businesses, FCF margins, GAAP adjustments for R&D/SBC.',
+      vote: modelVotes.seessel,
+    },
   ];
 
   // Calculate vote summary
@@ -273,7 +285,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
             </span>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {models.map((model) => (
             <ModelSummaryCard
               key={model.id}
@@ -374,8 +386,8 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
             ))}
           </div>
 
-          {/* Hurdle Rate Input (only when Buffett selected) */}
-          {selectedDeepModels.has('buffett') && (
+          {/* Hurdle Rate Input (Buffett or Seessel selected) */}
+          {(selectedDeepModels.has('buffett') || selectedDeepModels.has('seessel')) && (
             <div className="flex items-center gap-3">
               <label className="text-sm text-terminal-muted">Hurdle Rate:</label>
               <input
@@ -387,6 +399,23 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
                 className="w-20 px-2 py-1 rounded bg-terminal-bg border border-terminal-border text-terminal-text text-sm font-mono text-center"
               />
               <span className="text-sm text-terminal-muted">%</span>
+            </div>
+          )}
+
+          {/* NRR Input (only when Seessel selected) */}
+          {selectedDeepModels.has('seessel') && (
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-terminal-muted">NRR % (optional):</label>
+              <input
+                type="number"
+                value={nrrValue || ''}
+                onChange={(e) => setNrrValue(Number(e.target.value))}
+                min={0}
+                max={300}
+                placeholder="e.g. 115"
+                className="w-24 px-2 py-1 rounded bg-terminal-bg border border-terminal-border text-terminal-text text-sm font-mono text-center placeholder:text-terminal-muted/50"
+              />
+              <span className="text-xs text-terminal-muted">From IR materials</span>
             </div>
           )}
 

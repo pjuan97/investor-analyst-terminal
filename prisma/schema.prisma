@@ -255,12 +255,17 @@ model FinancialStatementAnnual {
   totalEquity        Decimal? @map("total_equity") @db.Decimal(20, 2)
   retainedEarnings   Decimal? @map("retained_earnings") @db.Decimal(20, 2)
 
+  // Income Statement — additional detail
+  researchAndDevelopment  Decimal? @map("research_and_development") @db.Decimal(20, 2)
+  sellingGeneralAdmin     Decimal? @map("selling_general_admin") @db.Decimal(20, 2)
+
   // Cash Flow Statement
-  operatingCashFlow  Decimal? @map("operating_cash_flow") @db.Decimal(20, 2)
-  capitalExpenditure Decimal? @map("capital_expenditure") @db.Decimal(20, 2)
-  freeCashFlow       Decimal? @map("free_cash_flow") @db.Decimal(20, 2)
-  dividendsPaid      Decimal? @map("dividends_paid") @db.Decimal(20, 2)
-  shareRepurchases   Decimal? @map("share_repurchases") @db.Decimal(20, 2)
+  operatingCashFlow      Decimal? @map("operating_cash_flow") @db.Decimal(20, 2)
+  capitalExpenditure     Decimal? @map("capital_expenditure") @db.Decimal(20, 2)
+  freeCashFlow           Decimal? @map("free_cash_flow") @db.Decimal(20, 2)
+  dividendsPaid          Decimal? @map("dividends_paid") @db.Decimal(20, 2)
+  shareRepurchases       Decimal? @map("share_repurchases") @db.Decimal(20, 2)
+  stockBasedCompensation Decimal? @map("stock_based_compensation") @db.Decimal(20, 2)
 
   // Data Quality
   dataSource       String   @map("data_source") // "sec_xbrl", "fmp", "manual"

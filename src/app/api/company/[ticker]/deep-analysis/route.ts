@@ -94,6 +94,7 @@ export async function POST(
     const body = await request.json();
     const requestedModels: string[] = body.models || [];
     const hurdleRate: number = body.hurdleRate ?? 0.10;
+    const nrr: number | undefined = body.nrr;
 
     // Validate models
     const validModels = requestedModels.filter((m) =>
@@ -187,6 +188,10 @@ export async function POST(
           fcfGrowth: toNum(m?.fcfGrowth),
           earningsYieldMF: toNum(m?.earningsYieldMF),
           returnOnCapitalMF: toNum(m?.returnOnCapitalMF),
+          researchAndDevelopment: toNum(s.researchAndDevelopment),
+          sellingGeneralAdmin: toNum(s.sellingGeneralAdmin),
+          stockBasedCompensation: toNum(s.stockBasedCompensation),
+          shareRepurchases: toNum(s.shareRepurchases),
         };
       });
 
@@ -233,6 +238,7 @@ ${latestQuarterly.mdaText}`;
           exchange: company.exchange || 'Unknown',
           financials,
           hurdleRate,
+          ...(modelId === 'seessel' && nrr != null ? { nrr } : {}),
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { system, user } = (promptBuilder as (p: any) => { system: string; user: string })(promptParams);

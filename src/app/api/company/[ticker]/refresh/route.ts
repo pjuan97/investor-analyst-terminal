@@ -18,6 +18,7 @@ export async function POST(
 
     const { ticker } = await params;
     const upperTicker = ticker.toUpperCase();
+    console.log('Refresh called for:', upperTicker);
 
     // Find company
     const company = await prisma.company.findUnique({
@@ -112,6 +113,9 @@ export async function POST(
             freeCashFlow: statement.freeCashFlow,
             dividendsPaid: statement.dividendsPaid,
             shareRepurchases: statement.shareRepurchases,
+            researchAndDevelopment: statement.researchAndDevelopment,
+            sellingGeneralAdmin: statement.sellingGeneralAdmin,
+            stockBasedCompensation: statement.stockBasedCompensation,
             dataSource: statement.dataSource,
             dataQuality: statement.dataQuality,
             missingFields: statement.missingFields,
@@ -156,6 +160,9 @@ export async function POST(
             freeCashFlow: statement.freeCashFlow,
             dividendsPaid: statement.dividendsPaid,
             shareRepurchases: statement.shareRepurchases,
+            researchAndDevelopment: statement.researchAndDevelopment,
+            sellingGeneralAdmin: statement.sellingGeneralAdmin,
+            stockBasedCompensation: statement.stockBasedCompensation,
             dataSource: statement.dataSource,
             dataQuality: statement.dataQuality,
             missingFields: statement.missingFields,
@@ -273,10 +280,16 @@ export async function POST(
     // 4. Generate recommendation if metrics are available
     if (metricsResult.success && metricsResult.metricsCount > 0) {
       try {
-        const metricsRecords = await prisma.metricsAnnual.findMany({
-          where: { companyId: company.id },
-          orderBy: { fiscalYear: 'desc' },
-        });
+        const [metricsRecords, stmtRecords] = await Promise.all([
+          prisma.metricsAnnual.findMany({
+            where: { companyId: company.id },
+            orderBy: { fiscalYear: 'desc' },
+          }),
+          prisma.financialStatementAnnual.findMany({
+            where: { companyId: company.id },
+            orderBy: { fiscalYear: 'desc' },
+          }),
+        ]);
 
         const latestPrice = await prisma.priceDaily.findFirst({
           where: { companyId: company.id },
@@ -285,39 +298,77 @@ export async function POST(
 
         const currentPrice = latestPrice ? Number(latestPrice.close) : 0;
 
-        const unifiedMetrics: UnifiedMetricsInput[] = metricsRecords.map((m) => ({
-          fiscalYear: m.fiscalYear,
-          grossMargin: m.grossMargin ? Number(m.grossMargin) : null,
-          operatingMargin: m.operatingMargin ? Number(m.operatingMargin) : null,
-          netMargin: m.netMargin ? Number(m.netMargin) : null,
-          roe: m.roe ? Number(m.roe) : null,
-          roa: m.roa ? Number(m.roa) : null,
-          roic: m.roic ? Number(m.roic) : null,
-          roce: m.roce ? Number(m.roce) : null,
-          fcfMargin: m.fcfMargin ? Number(m.fcfMargin) : null,
-          fcfYield: m.fcfYield ? Number(m.fcfYield) : null,
-          fcfPerShare: m.fcfPerShare ? Number(m.fcfPerShare) : null,
-          debtToEquity: m.debtToEquity ? Number(m.debtToEquity) : null,
-          debtToEbitda: m.debtToEbitda ? Number(m.debtToEbitda) : null,
-          debtToFcf: m.debtToFcf ? Number(m.debtToFcf) : null,
-          currentRatio: m.currentRatio ? Number(m.currentRatio) : null,
-          interestCoverage: m.interestCoverage ? Number(m.interestCoverage) : null,
-          marketCap: m.marketCap ? Number(m.marketCap) : null,
-          enterpriseValue: m.enterpriseValue ? Number(m.enterpriseValue) : null,
-          peRatio: m.peRatio ? Number(m.peRatio) : null,
-          pbRatio: m.pbRatio ? Number(m.pbRatio) : null,
-          psRatio: m.psRatio ? Number(m.psRatio) : null,
-          evToEbitda: m.evToEbitda ? Number(m.evToEbitda) : null,
-          evToFcf: m.evToFcf ? Number(m.evToFcf) : null,
-          earningsYield: m.earningsYield ? Number(m.earningsYield) : null,
-          fcfYieldOnEv: m.fcfYieldOnEv ? Number(m.fcfYieldOnEv) : null,
-          revenueGrowth: m.revenueGrowth ? Number(m.revenueGrowth) : null,
-          epsGrowth: m.epsGrowth ? Number(m.epsGrowth) : null,
-          fcfGrowth: m.fcfGrowth ? Number(m.fcfGrowth) : null,
-          earningsYieldMF: m.earningsYieldMF ? Number(m.earningsYieldMF) : null,
-          returnOnCapitalMF: m.returnOnCapitalMF ? Number(m.returnOnCapitalMF) : null,
-          qualityScore: m.qualityScore ? Number(m.qualityScore) : null,
-        }));
+        // Build statement map for Seessel BMP fields
+        const stmtByYear = new Map(stmtRecords.map((s) => [s.fiscalYear, s]));
+
+        const computeCagr3y = (fiscalYear: number): number | null => {
+          const cur = stmtByYear.get(fiscalYear);
+          const past = stmtByYear.get(fiscalYear - 3);
+          if (!cur?.revenue || !past?.revenue) return null;
+          const revCurr = Number(cur.revenue);
+          const revPast = Number(past.revenue);
+          if (revPast <= 0 || revCurr <= 0) return null;
+          return Math.pow(revCurr / revPast, 1 / 3) - 1;
+        };
+
+        const computeDilution = (fiscalYear: number): number | null => {
+          const cur = stmtByYear.get(fiscalYear);
+          const prev = stmtByYear.get(fiscalYear - 1);
+          if (!cur?.sharesOutstandingDiluted || !prev?.sharesOutstandingDiluted) return null;
+          const sharesCurr = Number(cur.sharesOutstandingDiluted);
+          const sharesPrev = Number(prev.sharesOutstandingDiluted);
+          if (sharesPrev <= 0) return null;
+          return (sharesCurr - sharesPrev) / sharesPrev;
+        };
+
+        const unifiedMetrics: UnifiedMetricsInput[] = metricsRecords.map((m) => {
+          const stmt = stmtByYear.get(m.fiscalYear);
+          const revenue = stmt?.revenue ? Number(stmt.revenue) : null;
+          const rd = stmt?.researchAndDevelopment ? Number(stmt.researchAndDevelopment) : null;
+          const sbc = stmt?.stockBasedCompensation ? Number(stmt.stockBasedCompensation) : null;
+          const ppe = stmt?.propertyPlantEquipment ? Number(stmt.propertyPlantEquipment) : null;
+          const totalAssets = stmt?.totalAssets ? Number(stmt.totalAssets) : null;
+
+          return {
+            fiscalYear: m.fiscalYear,
+            grossMargin: m.grossMargin ? Number(m.grossMargin) : null,
+            operatingMargin: m.operatingMargin ? Number(m.operatingMargin) : null,
+            netMargin: m.netMargin ? Number(m.netMargin) : null,
+            roe: m.roe ? Number(m.roe) : null,
+            roa: m.roa ? Number(m.roa) : null,
+            roic: m.roic ? Number(m.roic) : null,
+            roce: m.roce ? Number(m.roce) : null,
+            fcfMargin: m.fcfMargin ? Number(m.fcfMargin) : null,
+            fcfYield: m.fcfYield ? Number(m.fcfYield) : null,
+            fcfPerShare: m.fcfPerShare ? Number(m.fcfPerShare) : null,
+            debtToEquity: m.debtToEquity ? Number(m.debtToEquity) : null,
+            debtToEbitda: m.debtToEbitda ? Number(m.debtToEbitda) : null,
+            debtToFcf: m.debtToFcf ? Number(m.debtToFcf) : null,
+            currentRatio: m.currentRatio ? Number(m.currentRatio) : null,
+            interestCoverage: m.interestCoverage ? Number(m.interestCoverage) : null,
+            marketCap: m.marketCap ? Number(m.marketCap) : null,
+            enterpriseValue: m.enterpriseValue ? Number(m.enterpriseValue) : null,
+            peRatio: m.peRatio ? Number(m.peRatio) : null,
+            pbRatio: m.pbRatio ? Number(m.pbRatio) : null,
+            psRatio: m.psRatio ? Number(m.psRatio) : null,
+            evToEbitda: m.evToEbitda ? Number(m.evToEbitda) : null,
+            evToFcf: m.evToFcf ? Number(m.evToFcf) : null,
+            earningsYield: m.earningsYield ? Number(m.earningsYield) : null,
+            fcfYieldOnEv: m.fcfYieldOnEv ? Number(m.fcfYieldOnEv) : null,
+            revenueGrowth: m.revenueGrowth ? Number(m.revenueGrowth) : null,
+            epsGrowth: m.epsGrowth ? Number(m.epsGrowth) : null,
+            fcfGrowth: m.fcfGrowth ? Number(m.fcfGrowth) : null,
+            earningsYieldMF: m.earningsYieldMF ? Number(m.earningsYieldMF) : null,
+            returnOnCapitalMF: m.returnOnCapitalMF ? Number(m.returnOnCapitalMF) : null,
+            qualityScore: m.qualityScore ? Number(m.qualityScore) : null,
+            // Seessel BMP fields (computed on-the-fly)
+            revenueGrowthCagr3y: computeCagr3y(m.fiscalYear),
+            rdAsPercentRevenue: rd !== null && revenue !== null && revenue > 0 ? rd / revenue : null,
+            sbcAsPercentRevenue: sbc !== null && revenue !== null && revenue > 0 ? sbc / revenue : null,
+            netDilutionPercent: computeDilution(m.fiscalYear),
+            ppeTotalAssetsRatio: ppe !== null && totalAssets !== null && totalAssets > 0 ? ppe / totalAssets : null,
+          };
+        });
 
         const currentMetrics = unifiedMetrics[0];
         const historicalMetrics = unifiedMetrics.slice(1);

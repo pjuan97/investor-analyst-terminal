@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { MetricsAnnual, PriceDaily } from '@prisma/client';
+import type { MetricsAnnual, PriceDaily, FinancialStatementAnnual } from '@prisma/client';
 import {
   LineChart,
   Line,
@@ -18,9 +18,10 @@ import {
 interface MetricsTabProps {
   metrics: MetricsAnnual[];
   prices: PriceDaily[];
+  financials?: FinancialStatementAnnual[];
 }
 
-type ChartType = 'profitability' | 'returns' | 'valuation' | 'growth' | 'cashflow' | 'leverage' | 'pershare' | 'magicformula' | 'price';
+type ChartType = 'profitability' | 'returns' | 'valuation' | 'growth' | 'cashflow' | 'leverage' | 'pershare' | 'magicformula' | 'rdAndSbc' | 'seesselMetrics' | 'price';
 type PriceRange = '90d' | '1y' | '3y' | '5y' | 'max';
 
 const CHART_EXPLANATIONS: Record<string, {
@@ -110,6 +111,29 @@ const CHART_EXPLANATIONS: Record<string, {
       negative: "FCF/Share flat or declining while total FCF grows — indicates share dilution is eroding per-share value.",
     },
   },
+  rdAndSbc: {
+    what: "Shows R&D and Stock-Based Compensation as a percentage of revenue. Adam Seessel argues R&D should be capitalized (it's an investment), while SBC is a real cost that dilutes shareholders.",
+    variables: [
+      { name: "R&D % Revenue", description: "Research & Development spending relative to revenue. 10-30% is the sweet spot for moat maintenance in digital businesses." },
+      { name: "SBC % Revenue", description: "Stock-Based Compensation as a percentage of revenue. Below 5% is acceptable; above 10% is a red flag for dilution." },
+    ],
+    howToRead: {
+      positive: "Consistent R&D investment (10-30%) signals moat reinvestment. SBC declining as a percentage of revenue over time shows compensation discipline.",
+      negative: "SBC consistently above 10% of revenue signals excessive dilution. R&D declining may indicate underinvestment in the business's competitive position.",
+    },
+  },
+  seesselMetrics: {
+    what: "Key metrics from Adam Seessel's BMP framework. Combines business quality indicators (Gross Margin, FCF Margin) with investment intensity (R&D). Ideal BMP candidates have high margins and meaningful R&D.",
+    variables: [
+      { name: "FCF Margin", description: "Free cash flow as a percentage of revenue. Above 20% is exceptional for asset-light businesses." },
+      { name: "Gross Margin", description: "Revenue minus cost of goods sold. Above 60% signals a digital-era business with pricing power." },
+      { name: "R&D % Revenue", description: "Investment in innovation relative to revenue. Shows commitment to maintaining competitive advantages." },
+    ],
+    howToRead: {
+      positive: "FCF Margin above 20% with Gross Margin above 60% — a classic Seessel BMP business. R&D between 10-30% shows productive moat investment.",
+      negative: "FCF Margin below 10% despite high Gross Margin suggests operational inefficiency. R&D above 30% may indicate unproductive spending.",
+    },
+  },
   magicformula: {
     what: "Joel Greenblatt's Magic Formula ranks companies on two factors: how cheap they are (Earnings Yield) and how good they are (Return on Capital). The goal is to buy good companies at cheap prices.",
     variables: [
@@ -123,7 +147,7 @@ const CHART_EXPLANATIONS: Record<string, {
   },
 };
 
-export function MetricsTab({ metrics, prices }: MetricsTabProps) {
+export function MetricsTab({ metrics, prices, financials }: MetricsTabProps) {
   const [chartType, setChartType] = useState<ChartType>('profitability');
   const [priceRange, setPriceRange] = useState<PriceRange>('1y');
 
@@ -135,36 +159,51 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
     );
   }
 
+  // Build a map of financial statements by fiscal year for R&D/SBC data
+  const finByYear = new Map(
+    (financials ?? []).map((f) => [f.fiscalYear, f])
+  );
+
   // Prepare chart data
   const metricsData = [...metrics]
     .sort((a, b) => a.fiscalYear - b.fiscalYear)
-    .map((m) => ({
-      year: m.fiscalYear,
-      grossMargin: m.grossMargin ? Number(m.grossMargin) * 100 : null,
-      operatingMargin: m.operatingMargin ? Number(m.operatingMargin) * 100 : null,
-      netMargin: m.netMargin ? Number(m.netMargin) * 100 : null,
-      roe: m.roe ? Number(m.roe) * 100 : null,
-      roic: m.roic ? Number(m.roic) * 100 : null,
-      roa: m.roa ? Number(m.roa) * 100 : null,
-      peRatio: m.peRatio ? Number(m.peRatio) : null,
-      pbRatio: m.pbRatio ? Number(m.pbRatio) : null,
-      evToEbitda: m.evToEbitda ? Number(m.evToEbitda) : null,
-      earningsYield: m.earningsYield ? Number(m.earningsYield) * 100 : null,
-      revenueGrowth: m.revenueGrowth ? Number(m.revenueGrowth) * 100 : null,
-      epsGrowth: m.epsGrowth ? Number(m.epsGrowth) * 100 : null,
-      fcfGrowth: m.fcfGrowth ? Number(m.fcfGrowth) * 100 : null,
-      // Cash Flow (percentages)
-      fcfMarginValue: m.fcfMargin ? Number(m.fcfMargin) * 100 : null,
-      fcfYieldValue: m.fcfYield ? Number(m.fcfYield) * 100 : null,
-      fcfPerShareValue: m.fcfPerShare ? Number(m.fcfPerShare) : null,
-      // Leverage (ratios)
-      debtToEquityValue: m.debtToEquity ? Number(m.debtToEquity) : null,
-      debtToEbitdaValue: m.debtToEbitda ? Number(m.debtToEbitda) : null,
-      interestCoverageValue: m.interestCoverage ? Number(m.interestCoverage) : null,
-      // Magic Formula (percentages)
-      earningsYieldMFValue: m.earningsYieldMF ? Number(m.earningsYieldMF) * 100 : null,
-      returnOnCapitalMFValue: m.returnOnCapitalMF ? Number(m.returnOnCapitalMF) * 100 : null,
-    }));
+    .map((m) => {
+      const fin = finByYear.get(m.fiscalYear);
+      const revenue = fin?.revenue ? Number(fin.revenue) : null;
+      const rd = fin?.researchAndDevelopment ? Number(fin.researchAndDevelopment) : null;
+      const sbc = fin?.stockBasedCompensation ? Number(fin.stockBasedCompensation) : null;
+
+      return {
+        year: m.fiscalYear,
+        grossMargin: m.grossMargin ? Number(m.grossMargin) * 100 : null,
+        operatingMargin: m.operatingMargin ? Number(m.operatingMargin) * 100 : null,
+        netMargin: m.netMargin ? Number(m.netMargin) * 100 : null,
+        roe: m.roe ? Number(m.roe) * 100 : null,
+        roic: m.roic ? Number(m.roic) * 100 : null,
+        roa: m.roa ? Number(m.roa) * 100 : null,
+        peRatio: m.peRatio ? Number(m.peRatio) : null,
+        pbRatio: m.pbRatio ? Number(m.pbRatio) : null,
+        evToEbitda: m.evToEbitda ? Number(m.evToEbitda) : null,
+        earningsYield: m.earningsYield ? Number(m.earningsYield) * 100 : null,
+        revenueGrowth: m.revenueGrowth ? Number(m.revenueGrowth) * 100 : null,
+        epsGrowth: m.epsGrowth ? Number(m.epsGrowth) * 100 : null,
+        fcfGrowth: m.fcfGrowth ? Number(m.fcfGrowth) * 100 : null,
+        // Cash Flow (percentages)
+        fcfMarginValue: m.fcfMargin ? Number(m.fcfMargin) * 100 : null,
+        fcfYieldValue: m.fcfYield ? Number(m.fcfYield) * 100 : null,
+        fcfPerShareValue: m.fcfPerShare ? Number(m.fcfPerShare) : null,
+        // Leverage (ratios)
+        debtToEquityValue: m.debtToEquity ? Number(m.debtToEquity) : null,
+        debtToEbitdaValue: m.debtToEbitda ? Number(m.debtToEbitda) : null,
+        interestCoverageValue: m.interestCoverage ? Number(m.interestCoverage) : null,
+        // Magic Formula (percentages)
+        earningsYieldMFValue: m.earningsYieldMF ? Number(m.earningsYieldMF) * 100 : null,
+        returnOnCapitalMFValue: m.returnOnCapitalMF ? Number(m.returnOnCapitalMF) * 100 : null,
+        // R&D & SBC (percentages of revenue)
+        rdPercentRevenue: rd !== null && revenue !== null && revenue > 0 ? (rd / revenue) * 100 : null,
+        sbcPercentRevenue: sbc !== null && revenue !== null && revenue > 0 ? (sbc / revenue) * 100 : null,
+      };
+    });
 
   // Prepare price data based on selected range
   const getPriceSliceCount = (range: PriceRange): number => {
@@ -246,6 +285,21 @@ export function MetricsTab({ metrics, prices }: MetricsTabProps) {
       lines: [
         { key: 'earningsYieldMFValue', color: '#22c55e', name: 'Earnings Yield' },
         { key: 'returnOnCapitalMFValue', color: '#3b82f6', name: 'Return on Capital' },
+      ],
+    },
+    rdAndSbc: {
+      title: 'R&D & SBC Investment (%)',
+      lines: [
+        { key: 'rdPercentRevenue', color: '#58a6ff', name: 'R&D % Revenue' },
+        { key: 'sbcPercentRevenue', color: '#f59e0b', name: 'SBC % Revenue' },
+      ],
+    },
+    seesselMetrics: {
+      title: 'Seessel BMP Metrics',
+      lines: [
+        { key: 'fcfMarginValue', color: '#22c55e', name: 'FCF Margin %' },
+        { key: 'grossMargin', color: '#3b82f6', name: 'Gross Margin %' },
+        { key: 'rdPercentRevenue', color: '#f59e0b', name: 'R&D % Revenue' },
       ],
     },
     price: {

@@ -61,12 +61,17 @@ export interface FinancialStatementData {
   totalEquity: number | null;
   retainedEarnings: number | null;
 
+  // Income Statement — additional detail
+  researchAndDevelopment: number | null;
+  sellingGeneralAdmin: number | null;
+
   // Cash Flow Statement
   operatingCashFlow: number | null;
   capitalExpenditure: number | null;
   freeCashFlow: number | null;
   dividendsPaid: number | null;
   shareRepurchases: number | null;
+  stockBasedCompensation: number | null;
 
   // Metadata
   dataSource: string;
