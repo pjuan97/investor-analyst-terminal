@@ -182,20 +182,34 @@ export default function EarningsPage() {
                       </td>
                       <td>
                         <div className="flex items-center gap-2">
-                          {e.isInWatchlist && (
-                            <span
-                              className="text-terminal-accent text-xs"
-                              title="In your watchlist"
-                            >
-                              ★
-                            </span>
+                          {e.isInWatchlist ? (
+                            <>
+                              <span
+                                className="text-terminal-accent text-xs"
+                                title="In your watchlist"
+                              >
+                                ★
+                              </span>
+                              <Link
+                                href={`/company/${e.symbol}`}
+                                className="text-terminal-accent hover:underline font-medium"
+                              >
+                                {e.symbol}
+                              </Link>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-terminal-text font-medium">
+                                {e.symbol}
+                              </span>
+                              <span
+                                className="text-terminal-muted text-xs cursor-help"
+                                title={`Add ${e.symbol} to your Watchlist to view full analysis`}
+                              >
+                                +
+                              </span>
+                            </>
                           )}
-                          <Link
-                            href={`/company/${e.symbol}`}
-                            className="text-terminal-accent hover:underline font-medium"
-                          >
-                            {e.symbol}
-                          </Link>
                           <span className="text-terminal-muted text-sm truncate max-w-[180px]">
                             {e.companyName}
                           </span>
