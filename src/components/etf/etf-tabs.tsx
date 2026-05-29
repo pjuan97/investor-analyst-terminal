@@ -317,6 +317,7 @@ function EtfHeader({
     setRefreshing(true);
     try {
       await fetch(`/api/etf/${company.ticker}/refresh`, { method: 'POST' });
+      await new Promise(resolve => setTimeout(resolve, 500));
       router.refresh();
     } finally {
       setRefreshing(false);

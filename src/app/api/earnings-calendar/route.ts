@@ -70,29 +70,10 @@ export async function GET(request: NextRequest) {
         .map((w) => w.company.ticker)
     );
 
-    // Get known companies from DB (non-ETF, ordered by market cap) for non-watchlist matches
-    const knownCompanies = await prisma.company.findMany({
-      where: { isEtf: false },
-      select: { ticker: true, name: true },
-      orderBy: { updatedAt: 'desc' },
-      take: 200,
-    });
-
-    const companyNameMap = new Map<string, string>();
-    for (const c of knownCompanies) {
-      companyNameMap.set(c.ticker, c.name);
-    }
-    for (const w of watchlistItems) {
-      companyNameMap.set(w.company.ticker, w.company.name);
-    }
-
-    const knownTickers = new Set(knownCompanies.map((c) => c.ticker));
-
-    // Build results: watchlist items + top known companies
+    // Build results: return ALL companies from FMP calendar
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     const results = fmpData
-      .filter((e) => watchlistTickers.has(e.symbol) || knownTickers.has(e.symbol))
       .map((e) => {
         const d = new Date(e.date + 'T00:00:00');
         const surprise =
@@ -102,7 +83,7 @@ export async function GET(request: NextRequest) {
 
         return {
           symbol: e.symbol,
-          companyName: companyNameMap.get(e.symbol) || e.symbol,
+          companyName: e.symbol,
           date: e.date,
           dayOfWeek: dayNames[d.getDay()],
           epsEstimated: e.epsEstimated,

@@ -130,6 +130,12 @@ export async function POST(
       data: { lastRefreshedAt: new Date() },
     });
 
+    const updated = await prisma.company.findUnique({
+      where: { id: company.id },
+      select: { ticker: true, lastRefreshedAt: true },
+    });
+    console.log('ETF refresh saved:', updated);
+
     return NextResponse.json({
       success: true,
       ticker: upperTicker,

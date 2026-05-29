@@ -133,6 +133,7 @@ export default function EtfPage() {
     setRefreshing(false);
     setSelectedEtfs(new Set());
     setRefreshProgress({ current: 0, total: 0 });
+    await new Promise(resolve => setTimeout(resolve, 800));
     await fetchEtfs();
   };
 
