@@ -13,8 +13,9 @@ import { OverviewTab } from './tabs/overview-tab';
 import { FinancialsTab } from './tabs/financials-tab';
 import { MetricsTab } from './tabs/metrics-tab';
 import { ModelsTab } from './tabs/models-tab';
+import { PeersTab } from './tabs/peers-tab';
 
-type TabType = 'overview' | 'financials' | 'metrics' | 'models';
+type TabType = 'overview' | 'financials' | 'metrics' | 'models' | 'peers';
 
 interface CompanyTabsProps {
   company: Company;
@@ -30,6 +31,7 @@ const tabs: { id: TabType; label: string }[] = [
   { id: 'financials', label: 'Financials' },
   { id: 'metrics', label: 'Metrics' },
   { id: 'models', label: 'Model Breakdown' },
+  { id: 'peers', label: 'Peers' },
 ];
 
 export function CompanyTabs({
@@ -88,6 +90,9 @@ export function CompanyTabs({
         )}
         {activeTab === 'models' && (
           <ModelsTab recommendation={latestRec} ticker={company.ticker} />
+        )}
+        {activeTab === 'peers' && (
+          <PeersTab ticker={company.ticker} />
         )}
       </div>
     </div>
