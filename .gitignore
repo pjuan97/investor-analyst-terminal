@@ -51,3 +51,8 @@ next-env.d.ts
 
 # Misc
 *.pem
+
+# Claude Code local files
+CLAUDE_SESSION.md
+.claude/settings.local.json
+.claude/commands/
