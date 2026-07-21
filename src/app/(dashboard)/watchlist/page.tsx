@@ -40,6 +40,8 @@ export default async function WatchlistPage() {
     lastRefreshedAt: item.company.lastRefreshedAt ?? null,
     dataQuality: item.company.dataQualityScore ? Number(item.company.dataQualityScore) : null,
     currency: item.company.currency,
+    // BVC-listed Colombian stocks use the `.CL` ticker suffix (see src/lib/providers/index.ts isBvcTicker)
+    market: (item.company.ticker.endsWith('.CL') ? 'BVC' : 'WALL_STREET') as 'BVC' | 'WALL_STREET',
   }));
 
   return (

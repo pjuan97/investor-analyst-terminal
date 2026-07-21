@@ -31,6 +31,12 @@
   --badge-low-bg: #3a1a1a;
   --badge-low-text: #f85149;
   --badge-low-border: #da3633;
+  --badge-market-us-bg: #21262d;
+  --badge-market-us-text: #8b949e;
+  --badge-market-us-border: #30363d;
+  --badge-market-bvc-bg: #2d1f47;
+  --badge-market-bvc-text: #d2a8ff;
+  --badge-market-bvc-border: #8957e5;
   --color-success: #3fb950;
   --color-warning: #d29922;
   --color-danger: #f85149;
@@ -68,6 +74,12 @@
   --badge-low-bg: #ffebe9;
   --badge-low-text: #cf222e;
   --badge-low-border: #ff8182;
+  --badge-market-us-bg: #f6f8fa;
+  --badge-market-us-text: #57606a;
+  --badge-market-us-border: #d0d7de;
+  --badge-market-bvc-bg: #fbefff;
+  --badge-market-bvc-text: #8250df;
+  --badge-market-bvc-border: #d8b9ff;
   --color-success: #1a7f37;
   --color-warning: #9a6700;
   --color-danger: #cf222e;
@@ -177,6 +189,18 @@ body {
     background-color: var(--badge-low-bg);
     color: var(--badge-low-text);
     border: 1px solid var(--badge-low-border);
+  }
+
+  .badge-market-us {
+    background-color: var(--badge-market-us-bg);
+    color: var(--badge-market-us-text);
+    border: 1px solid var(--badge-market-us-border);
+  }
+
+  .badge-market-bvc {
+    background-color: var(--badge-market-bvc-bg);
+    color: var(--badge-market-bvc-text);
+    border: 1px solid var(--badge-market-bvc-border);
   }
 
   /* Card styles */
