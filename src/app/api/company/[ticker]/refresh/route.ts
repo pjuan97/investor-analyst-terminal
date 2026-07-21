@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getProviders } from '@/lib/providers';
+import { getProviders, isBvcTicker } from '@/lib/providers';
 import { getFmpProvider } from '@/lib/providers/fmp';
 import { calculateAndStoreMetrics } from '@/lib/metrics';
 import { runAllModels, type UnifiedMetricsInput } from '@/lib/models';
@@ -29,7 +29,7 @@ export async function POST(
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    const providers = getProviders();
+    const providers = getProviders(upperTicker);
     const results = {
       financials: { success: false, count: 0, error: null as string | null },
       prices: { success: false, count: 0, error: null as string | null },
@@ -244,9 +244,9 @@ export async function POST(
       results.prices.error = pricesResult.error || 'Failed to fetch prices';
     }
 
-    // 2.5 Fetch company profile (enrichment)
+    // 2.5 Fetch company profile (enrichment) — FMP doesn't cover the BVC
     const fmp = getFmpProvider();
-    if (fmp) {
+    if (fmp && !isBvcTicker(upperTicker)) {
       try {
         const profile = await fmp.fetchCompanyProfile(upperTicker);
         if (profile) {

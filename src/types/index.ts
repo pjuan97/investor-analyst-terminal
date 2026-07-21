@@ -199,4 +199,6 @@ export interface CompanyInfo {
   industry: string | null;
   description: string | null;
   website: string | null;
+  country?: string;
+  currency?: string;
 }

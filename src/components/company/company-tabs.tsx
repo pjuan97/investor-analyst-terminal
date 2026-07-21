@@ -83,6 +83,7 @@ export function CompanyTabs({
             financials={financials}
             ticker={company.ticker}
             latestQuarterly={latestQuarterly}
+            currency={company.currency}
           />
         )}
         {activeTab === 'metrics' && (

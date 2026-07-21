@@ -12,6 +12,7 @@ interface CompanyHeaderProps {
     exchange: string | null;
     sector: string | null;
     industry: string | null;
+    currency: string;
   };
   latestPrice: number | null;
   priceDate: Date | null;
@@ -72,7 +73,7 @@ export function CompanyHeader({
     if (price === null) return '—';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: company.currency,
     }).format(price);
   };
 

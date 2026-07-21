@@ -8,6 +8,7 @@ interface FinancialsTabProps {
   financials: FinancialStatementAnnual[];
   ticker: string;
   latestQuarterly: QuarterlyReport | null;
+  currency?: string;
 }
 
 type Section = 'income' | 'balance' | 'cashflow';
@@ -54,7 +55,7 @@ const SECTION_EXPLANATIONS: Record<Section, {
   },
 };
 
-export function FinancialsTab({ financials, ticker, latestQuarterly }: FinancialsTabProps) {
+export function FinancialsTab({ financials, ticker, latestQuarterly, currency = 'USD' }: FinancialsTabProps) {
   const [section, setSection] = useState<Section>('income');
 
   if (financials.length === 0) {
@@ -122,9 +123,9 @@ export function FinancialsTab({ financials, ticker, latestQuarterly }: Financial
 
       {/* Data Table */}
       <div className="table-container">
-        {section === 'income' && <IncomeStatementTable data={sortedData} />}
-        {section === 'balance' && <BalanceSheetTable data={sortedData} />}
-        {section === 'cashflow' && <CashFlowTable data={sortedData} />}
+        {section === 'income' && <IncomeStatementTable data={sortedData} currency={currency} />}
+        {section === 'balance' && <BalanceSheetTable data={sortedData} currency={currency} />}
+        {section === 'cashflow' && <CashFlowTable data={sortedData} currency={currency} />}
       </div>
 
       {/* Data Quality Notice */}
@@ -156,14 +157,14 @@ function formatNumber(value: unknown): string {
   return num.toFixed(2);
 }
 
-function formatPerShare(value: unknown): string {
+function formatPerShare(value: unknown, currency = 'USD'): string {
   if (value === null || value === undefined) return '—';
   const num = typeof value === 'object' ? Number(value) : Number(value);
   if (isNaN(num)) return '—';
-  return `$${num.toFixed(2)}`;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num);
 }
 
-function IncomeStatementTable({ data }: { data: FinancialStatementAnnual[] }) {
+function IncomeStatementTable({ data, currency }: { data: FinancialStatementAnnual[]; currency: string }) {
   const rows: RowConfig[] = [
     { key: 'revenue', label: 'Revenue' },
     { key: 'costOfRevenue', label: 'Cost of Revenue' },
@@ -176,7 +177,7 @@ function IncomeStatementTable({ data }: { data: FinancialStatementAnnual[] }) {
     { key: 'epsDiluted', label: 'EPS (Diluted)', format: 'perShare' },
   ];
 
-  return <FinancialTable data={data} rows={rows} />;
+  return <FinancialTable data={data} rows={rows} currency={currency} />;
 }
 
 interface RowConfig {
@@ -186,7 +187,7 @@ interface RowConfig {
   format?: 'perShare' | 'number';
 }
 
-function BalanceSheetTable({ data }: { data: FinancialStatementAnnual[] }) {
+function BalanceSheetTable({ data, currency }: { data: FinancialStatementAnnual[]; currency: string }) {
   const rows: RowConfig[] = [
     { key: 'totalAssets', label: 'Total Assets', section: 'Assets' },
     { key: 'currentAssets', label: 'Current Assets' },
@@ -204,10 +205,10 @@ function BalanceSheetTable({ data }: { data: FinancialStatementAnnual[] }) {
     { key: 'retainedEarnings', label: 'Retained Earnings' },
   ];
 
-  return <FinancialTable data={data} rows={rows} />;
+  return <FinancialTable data={data} rows={rows} currency={currency} />;
 }
 
-function CashFlowTable({ data }: { data: FinancialStatementAnnual[] }) {
+function CashFlowTable({ data, currency }: { data: FinancialStatementAnnual[]; currency: string }) {
   const rows: RowConfig[] = [
     { key: 'operatingCashFlow', label: 'Operating Cash Flow' },
     { key: 'capitalExpenditure', label: 'Capital Expenditure' },
@@ -216,7 +217,7 @@ function CashFlowTable({ data }: { data: FinancialStatementAnnual[] }) {
     { key: 'shareRepurchases', label: 'Share Repurchases' },
   ];
 
-  return <FinancialTable data={data} rows={rows} />;
+  return <FinancialTable data={data} rows={rows} currency={currency} />;
 }
 
 function DataSourceSummary({ financials }: { financials: FinancialStatementAnnual[] }) {
@@ -267,9 +268,11 @@ function DataSourceSummary({ financials }: { financials: FinancialStatementAnnua
 function FinancialTable({
   data,
   rows,
+  currency,
 }: {
   data: FinancialStatementAnnual[];
   rows: RowConfig[];
+  currency: string;
 }) {
   return (
     <table className="data-table">
@@ -304,7 +307,7 @@ function FinancialTable({
                 const value = (year as Record<string, unknown>)[row.key];
                 const formatted =
                   row.format === 'perShare'
-                    ? formatPerShare(value)
+                    ? formatPerShare(value, currency)
                     : formatNumber(value);
 
                 return (

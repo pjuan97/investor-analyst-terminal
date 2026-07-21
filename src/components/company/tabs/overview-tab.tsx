@@ -42,21 +42,22 @@ const RANGE_DAYS: Record<PriceRange, number> = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function fmt(value: unknown, style: 'pct' | 'ratio' | 'money'): string {
+function fmt(value: unknown, style: 'pct' | 'ratio' | 'money', currency = 'USD'): string {
   if (value === null || value === undefined) return '—';
   const num = Number(value);
   if (isNaN(num)) return '—';
   if (style === 'pct') return `${(num * 100).toFixed(1)}%`;
-  if (style === 'money') return formatLargeNumber(num);
+  if (style === 'money') return formatLargeNumber(num, currency);
   return num.toFixed(2);
 }
 
-function formatLargeNumber(n: number): string {
-  const abs = Math.abs(n);
-  if (abs >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
-  if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  return `$${n.toLocaleString()}`;
+function formatLargeNumber(n: number, currency = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 2,
+  }).format(n);
 }
 
 // ---------------------------------------------------------------------------
@@ -313,8 +314,8 @@ export function OverviewTab({
             <div className="space-y-4 text-sm">
               {/* Market Data */}
               <MetricsSection title="MARKET DATA">
-                <MetricRow label="Market Cap" value={fmt(latestMetrics.marketCap, 'money')} />
-                <MetricRow label="Enterprise Value" value={fmt(latestMetrics.enterpriseValue, 'money')} />
+                <MetricRow label="Market Cap" value={fmt(latestMetrics.marketCap, 'money', companyData.currency)} />
+                <MetricRow label="Enterprise Value" value={fmt(latestMetrics.enterpriseValue, 'money', companyData.currency)} />
                 <MetricRow label="P/E Ratio" value={fmt(latestMetrics.peRatio, 'ratio')} />
                 <MetricRow label="P/B Ratio" value={fmt(latestMetrics.pbRatio, 'ratio')} />
               </MetricsSection>

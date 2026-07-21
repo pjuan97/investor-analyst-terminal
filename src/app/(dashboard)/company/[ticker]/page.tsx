@@ -80,6 +80,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
           exchange: company.exchange,
           sector: company.sector,
           industry: company.industry,
+          currency: company.currency,
         }}
         latestPrice={latestPrice ? Number(latestPrice.close) : null}
         priceDate={latestPrice?.date || null}

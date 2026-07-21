@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { getSecProvider } from '@/lib/providers';
+import { getProviders } from '@/lib/providers';
 import { z } from 'zod';
 
 const addTickerSchema = z.object({
-  ticker: z.string().min(1).max(10).toUpperCase(),
+  // max(20) fits suffixed tickers like ECOPETROL.CL (BVC-listed Colombian stocks)
+  ticker: z.string().min(1).max(20).toUpperCase(),
   cik: z.string().optional(), // Optional manual CIK
 });
 
@@ -25,12 +26,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!company) {
-      // Fetch company info from SEC
-      const secProvider = getSecProvider();
-      const companyInfoResult = await secProvider.getCompanyInfo(ticker);
+      // Fetch company info — routes to Yahoo for BVC (`.CL`) tickers,
+      // SEC EDGAR for everything else (unchanged for US tickers).
+      const companyInfoProvider = getProviders(ticker).companyInfo;
+      const companyInfoResult = await companyInfoProvider.getCompanyInfo(ticker);
 
       if (!companyInfoResult.success || !companyInfoResult.data) {
-        // If SEC lookup fails but user provided CIK, create anyway
+        // If lookup fails but user provided CIK, create anyway
         if (manualCik) {
           company = await prisma.company.create({
             data: {
@@ -58,6 +60,8 @@ export async function POST(request: NextRequest) {
             exchange: companyInfoResult.data.exchange,
             sector: companyInfoResult.data.sector,
             industry: companyInfoResult.data.industry,
+            country: companyInfoResult.data.country,
+            currency: companyInfoResult.data.currency,
           },
         });
       }

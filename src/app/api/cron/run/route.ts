@@ -58,11 +58,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const providers = getProviders();
-
     for (const company of watchlistCompanies) {
       try {
         results.companiesProcessed++;
+
+        const providers = getProviders(company.ticker);
 
         // 1. Update prices (always)
         const yesterday = new Date();

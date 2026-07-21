@@ -39,6 +39,7 @@ export default async function WatchlistPage() {
     lastUpdate: item.company.recommendations[0]?.createdAt ?? null,
     lastRefreshedAt: item.company.lastRefreshedAt ?? null,
     dataQuality: item.company.dataQualityScore ? Number(item.company.dataQualityScore) : null,
+    currency: item.company.currency,
   }));
 
   return (

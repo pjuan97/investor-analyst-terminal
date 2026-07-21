@@ -16,6 +16,7 @@ interface WatchlistItem {
   lastUpdate: Date | null;
   lastRefreshedAt: Date | null;
   dataQuality: number | null;
+  currency: string;
 }
 
 interface WatchlistTableProps {
@@ -63,11 +64,11 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
     router.refresh();
   };
 
-  const formatPrice = (price: number | null) => {
+  const formatPrice = (price: number | null, currency: string) => {
     if (price === null) return '—';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency,
     }).format(price);
   };
 
@@ -204,7 +205,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                   </Link>
                 </td>
                 <td className="text-terminal-text">{item.name}</td>
-                <td className="text-right font-mono">{formatPrice(item.price)}</td>
+                <td className="text-right font-mono">{formatPrice(item.price, item.currency)}</td>
                 <td>{getRatingBadge(item.recommendation)}</td>
                 <td className="text-right font-mono">
                   {formatConfidence(item.confidence)}

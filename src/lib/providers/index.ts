@@ -1,9 +1,20 @@
 import { getSecProvider, SecEdgarProvider } from './sec';
 import { getPriceProvider, PriceProviderType } from './prices';
 import { getFmpProvider, FmpProvider } from './fmp';
+import { getYahooFinancialsProvider } from './financials/yahoo-financials';
+import { getYahooCompanyInfoProvider } from './companyInfo/yahoo-company-info';
 import { CompanyInfoProvider, FinancialDataProvider, PriceDataProvider } from '@/types/providers';
 import { FinancialStatementData, ProviderResponse } from '@/types';
 import { fillDerivedFields } from './derived';
+
+/**
+ * BVC-listed Colombian tickers use the `.CL` suffix on Yahoo Finance
+ * (e.g. ECOPETROL.CL, CIBEST.CL). Neither FMP nor SEC EDGAR cover them,
+ * so they're routed to the Yahoo-based providers instead.
+ */
+export function isBvcTicker(ticker: string): boolean {
+  return ticker.toUpperCase().endsWith('.CL');
+}
 
 // ============================================================================
 // PROVIDER FACTORY
@@ -118,13 +129,26 @@ class CombinedFinancialProvider implements FinancialDataProvider {
  * Get all configured providers.
  * This is the main entry point for accessing data providers.
  *
+ * If `ticker` is a BVC-listed Colombian stock (`.CL` suffix), routes
+ * companyInfo/financials to the Yahoo-based providers — FMP and SEC EDGAR
+ * don't cover that exchange. Every other ticker keeps the existing
+ * FMP+SEC path unchanged.
+ *
  * If FMP_API_KEY is set, uses CombinedFinancialProvider (FMP + SEC in parallel).
  * Otherwise uses SEC EDGAR directly.
  */
-export function getProviders(): Providers {
+export function getProviders(ticker?: string): Providers {
   const secProvider = getSecProvider();
   const priceProvider = getPriceProvider();
   const fmpProvider = getFmpProvider();
+
+  if (ticker && isBvcTicker(ticker)) {
+    return {
+      companyInfo: getYahooCompanyInfoProvider(),
+      financials: getYahooFinancialsProvider(),
+      prices: priceProvider,
+    };
+  }
 
   const financialsProvider = fmpProvider
     ? new CombinedFinancialProvider(fmpProvider, secProvider)
