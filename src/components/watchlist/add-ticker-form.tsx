@@ -49,8 +49,8 @@ export function AddTickerForm({ userId }: AddTickerFormProps) {
           value={ticker}
           onChange={(e) => setTicker(e.target.value.toUpperCase())}
           placeholder="AAPL"
-          className="input w-32 uppercase"
-          maxLength={10}
+          className="input w-36 uppercase"
+          maxLength={20}
           required
         />
         {error && (
