@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getProviders } from '@/lib/providers';
+import { serialize } from '@/lib/utils/serialize';
 import { z } from 'zod';
 
 const addTickerSchema = z.object({
@@ -141,7 +142,9 @@ export async function GET() {
       orderBy: { addedAt: 'desc' },
     });
 
-    return NextResponse.json({ data: watchlist });
+    // `prices` carries PriceDaily.volume (BigInt), which JSON.stringify cannot
+    // serialize on its own — serialize() turns it into a string first.
+    return NextResponse.json(serialize({ data: watchlist }));
   } catch (error) {
     console.error('Get watchlist error:', error);
     return NextResponse.json(

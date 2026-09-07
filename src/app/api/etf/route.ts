@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-
-function serialize<T>(obj: T): T {
-  return JSON.parse(
-    JSON.stringify(obj, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    )
-  );
-}
+import { serialize } from '@/lib/utils/serialize';
 
 // GET — List all ETFs
 export async function GET() {

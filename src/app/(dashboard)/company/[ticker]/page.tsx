@@ -1,20 +1,12 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { serialize } from '@/lib/utils/serialize';
 import { CompanyHeader } from '@/components/company/company-header';
 import { CompanyTabs } from '@/components/company/company-tabs';
 
 interface CompanyPageProps {
   params: Promise<{ ticker: string }>;
-}
-
-// Helper to serialize Prisma objects (converts Decimal to number, BigInt to string)
-function serialize<T>(obj: T): T {
-  return JSON.parse(
-    JSON.stringify(obj, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    )
-  );
 }
 
 export default async function CompanyPage({ params }: CompanyPageProps) {

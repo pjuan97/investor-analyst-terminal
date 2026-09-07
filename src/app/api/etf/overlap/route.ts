@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { callClaude, isClaudeConfigured } from '@/lib/analysis/claude-client';
-
-function serialize<T>(obj: T): T {
-  return JSON.parse(
-    JSON.stringify(obj, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    )
-  );
-}
+import { serialize } from '@/lib/utils/serialize';
 
 function formatAUM(value: number | null): string {
   if (value === null) return 'N/A';

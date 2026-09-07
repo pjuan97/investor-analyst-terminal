@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { serialize } from '@/lib/utils/serialize';
 import { getAlphaVantageProvider } from '@/lib/providers/alphavantage';
 import { getYahooFinanceProvider } from '@/lib/providers/prices/yahoo';
 
@@ -14,15 +15,6 @@ function inferAssetClass(category: string | null | undefined): string | null {
   if (/multi.asset|allocation|balanced/.test(c)) return 'Multi-Asset';
   if (/futures|managed futures|long.short|market neutral|merger arb|arbitrage|macro|hedge|multi.strategy|absolute return|bear|inverse|leveraged|buffer|defined outcome|systematic trend|alternative/.test(c)) return 'Alternative';
   return 'Equity';
-}
-
-// Helper to serialize Prisma objects
-function serialize<T>(obj: T): T {
-  return JSON.parse(
-    JSON.stringify(obj, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    )
-  );
 }
 
 // GET — Fetch ETF data
