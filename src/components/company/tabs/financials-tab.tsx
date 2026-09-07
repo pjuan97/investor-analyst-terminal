@@ -3,6 +3,7 @@
 import { Fragment, useState } from 'react';
 import type { FinancialStatementAnnual, QuarterlyReport } from '@prisma/client';
 import { QuarterlyReportSection } from '../QuarterlyReportSection';
+import { useTranslation } from '@/components/language-provider';
 
 interface FinancialsTabProps {
   financials: FinancialStatementAnnual[];
@@ -13,57 +14,70 @@ interface FinancialsTabProps {
 
 type Section = 'income' | 'balance' | 'cashflow';
 
-const SECTION_EXPLANATIONS: Record<Section, {
-  title: string;
-  what: string;
-  keyMetrics: { name: string; description: string }[];
-  tip: string;
-}> = {
-  income: {
-    title: "Income Statement",
-    what: "Shows revenue, expenses, and profit over a fiscal year. Think of it as a scorecard of how much money the company made and spent during the period.",
-    keyMetrics: [
-      { name: "Revenue", description: "Total sales — the starting point of the income statement." },
-      { name: "Gross Profit", description: "Revenue minus cost of goods sold. What's left after paying to produce the product." },
-      { name: "Operating Income", description: "Gross profit minus operating expenses (salaries, rent, marketing). The profit from core business operations." },
-      { name: "Net Income", description: "The final 'bottom line' after all expenses, taxes, and interest. What the company actually earned." },
-      { name: "EPS", description: "Net income divided by shares outstanding. How much each share earned." },
-    ],
-    tip: "Focus on the trend over multiple years. A company with growing revenue but shrinking net income is losing efficiency. EPS growth is more important than revenue growth for shareholders.",
-  },
-  balance: {
-    title: "Balance Sheet",
-    what: "A snapshot of what the company owns (assets), what it owes (liabilities), and what belongs to shareholders (equity) at a specific point in time. The fundamental equation: Assets = Liabilities + Equity.",
-    keyMetrics: [
-      { name: "Total Assets", description: "Everything the company owns — cash, inventory, equipment, intellectual property." },
-      { name: "Total Liabilities", description: "Everything the company owes — debt, accounts payable, deferred revenue." },
-      { name: "Total Equity", description: "Assets minus liabilities. The net worth belonging to shareholders." },
-      { name: "Cash", description: "Liquid assets available immediately. High cash gives flexibility during downturns." },
-      { name: "Total Debt", description: "Short and long-term borrowings. Compare to equity and EBITDA to assess leverage." },
-    ],
-    tip: "Compare total debt to total equity (Debt/Equity ratio). A company with more equity than debt has a conservative balance sheet. Watch for growing goodwill — it may indicate overpaid acquisitions.",
-  },
-  cashflow: {
-    title: "Cash Flow Statement",
-    what: "Shows how cash actually moved in and out of the business. Unlike the income statement, cash flow is much harder to manipulate with accounting choices. Many analysts consider this the most reliable financial statement.",
-    keyMetrics: [
-      { name: "Operating Cash Flow", description: "Cash generated from core business operations. Should consistently exceed net income for a healthy business." },
-      { name: "Capital Expenditure", description: "Cash spent on physical assets (equipment, facilities). High capex businesses require constant reinvestment." },
-      { name: "Free Cash Flow", description: "Operating cash flow minus capex. The real cash available to return to shareholders or fund growth." },
-    ],
-    tip: "If net income is consistently higher than operating cash flow, investigate why — it may indicate aggressive revenue recognition. Free cash flow is what Warren Buffett calls 'owner earnings.'",
-  },
-};
+type Translate = ReturnType<typeof useTranslation>['t'];
+
+/**
+ * Educational copy for each statement. Built from translation keys rather than
+ * a module-level constant so it follows the selected language.
+ */
+function sectionExplanations(t: Translate): Record<
+  Section,
+  {
+    title: string;
+    what: string;
+    keyMetrics: { name: string; description: string }[];
+    tip: string;
+  }
+> {
+  return {
+    income: {
+      title: t('fin.income.title'),
+      what: t('fin.income.what'),
+      keyMetrics: [
+        { name: t('fin.income.m1'), description: t('fin.income.m1d') },
+        { name: t('fin.income.m2'), description: t('fin.income.m2d') },
+        { name: t('fin.income.m3'), description: t('fin.income.m3d') },
+        { name: t('fin.income.m4'), description: t('fin.income.m4d') },
+        { name: t('fin.income.m5'), description: t('fin.income.m5d') },
+      ],
+      tip: t('fin.income.tip'),
+    },
+    balance: {
+      title: t('fin.balance.title'),
+      what: t('fin.balance.what'),
+      keyMetrics: [
+        { name: t('fin.balance.m1'), description: t('fin.balance.m1d') },
+        { name: t('fin.balance.m2'), description: t('fin.balance.m2d') },
+        { name: t('fin.balance.m3'), description: t('fin.balance.m3d') },
+        { name: t('fin.balance.m4'), description: t('fin.balance.m4d') },
+        { name: t('fin.balance.m5'), description: t('fin.balance.m5d') },
+      ],
+      tip: t('fin.balance.tip'),
+    },
+    cashflow: {
+      title: t('fin.cashflow.title'),
+      what: t('fin.cashflow.what'),
+      keyMetrics: [
+        { name: t('fin.cashflow.m1'), description: t('fin.cashflow.m1d') },
+        { name: t('fin.cashflow.m2'), description: t('fin.cashflow.m2d') },
+        { name: t('fin.cashflow.m3'), description: t('fin.cashflow.m3d') },
+      ],
+      tip: t('fin.cashflow.tip'),
+    },
+  };
+}
 
 export function FinancialsTab({ financials, ticker, latestQuarterly, currency = 'USD' }: FinancialsTabProps) {
+  const { t } = useTranslation();
   const [section, setSection] = useState<Section>('income');
+  const SECTION_EXPLANATIONS = sectionExplanations(t);
 
   if (financials.length === 0) {
     return (
       <div className="card text-center py-12">
-        <p className="text-terminal-muted">No financial data available yet.</p>
+        <p className="text-terminal-muted">{t('financials.noData')}</p>
         <p className="text-sm text-terminal-muted mt-2">
-          Use the refresh button to fetch data from SEC EDGAR.
+          {t('financials.noDataHint')}
         </p>
       </div>
     );
@@ -77,9 +91,9 @@ export function FinancialsTab({ financials, ticker, latestQuarterly, currency = 
       {/* Section Toggle */}
       <div className="flex gap-2">
         {[
-          { id: 'income', label: 'Income Statement' },
-          { id: 'balance', label: 'Balance Sheet' },
-          { id: 'cashflow', label: 'Cash Flow' },
+          { id: 'income', label: t('financials.incomeStatement') },
+          { id: 'balance', label: t('financials.balanceSheet') },
+          { id: 'cashflow', label: t('financials.cashFlow') },
         ].map((s) => (
           <button
             key={s.id}
@@ -114,7 +128,7 @@ export function FinancialsTab({ financials, ticker, latestQuarterly, currency = 
           ))}
         </div>
         <div className="pt-2 border-t border-terminal-border">
-          <p className="text-xs text-terminal-accent font-semibold mb-1">&#128161; What to look for</p>
+          <p className="text-xs text-terminal-accent font-semibold mb-1">&#128161; {t('financials.whatToLookFor')}</p>
           <p className="text-xs text-terminal-muted leading-relaxed">
             {SECTION_EXPLANATIONS[section].tip}
           </p>
@@ -165,16 +179,17 @@ function formatPerShare(value: unknown, currency = 'USD'): string {
 }
 
 function IncomeStatementTable({ data, currency }: { data: FinancialStatementAnnual[]; currency: string }) {
+  const { t } = useTranslation();
   const rows: RowConfig[] = [
-    { key: 'revenue', label: 'Revenue' },
-    { key: 'costOfRevenue', label: 'Cost of Revenue' },
-    { key: 'grossProfit', label: 'Gross Profit' },
-    { key: 'operatingExpenses', label: 'Operating Expenses' },
-    { key: 'operatingIncome', label: 'Operating Income' },
-    { key: 'interestExpense', label: 'Interest Expense' },
-    { key: 'netIncome', label: 'Net Income' },
-    { key: 'eps', label: 'EPS (Basic)', format: 'perShare' },
-    { key: 'epsDiluted', label: 'EPS (Diluted)', format: 'perShare' },
+    { key: 'revenue', label: t('fin.row.revenue') },
+    { key: 'costOfRevenue', label: t('fin.row.costOfRevenue') },
+    { key: 'grossProfit', label: t('fin.row.grossProfit') },
+    { key: 'operatingExpenses', label: t('fin.row.operatingExpenses') },
+    { key: 'operatingIncome', label: t('fin.row.operatingIncome') },
+    { key: 'interestExpense', label: t('fin.row.interestExpense') },
+    { key: 'netIncome', label: t('fin.row.netIncome') },
+    { key: 'eps', label: t('fin.row.epsBasic'), format: 'perShare' },
+    { key: 'epsDiluted', label: t('fin.row.epsDiluted'), format: 'perShare' },
   ];
 
   return <FinancialTable data={data} rows={rows} currency={currency} />;
@@ -188,33 +203,35 @@ interface RowConfig {
 }
 
 function BalanceSheetTable({ data, currency }: { data: FinancialStatementAnnual[]; currency: string }) {
+  const { t } = useTranslation();
   const rows: RowConfig[] = [
-    { key: 'totalAssets', label: 'Total Assets', section: 'Assets' },
-    { key: 'currentAssets', label: 'Current Assets' },
-    { key: 'cash', label: 'Cash & Equivalents' },
-    { key: 'receivables', label: 'Receivables' },
-    { key: 'inventory', label: 'Inventory' },
-    { key: 'propertyPlantEquipment', label: 'PP&E' },
-    { key: 'goodwill', label: 'Goodwill' },
-    { key: 'totalLiabilities', label: 'Total Liabilities', section: 'Liabilities' },
-    { key: 'currentLiabilities', label: 'Current Liabilities' },
-    { key: 'shortTermDebt', label: 'Short-Term Debt' },
-    { key: 'longTermDebt', label: 'Long-Term Debt' },
-    { key: 'totalDebt', label: 'Total Debt' },
-    { key: 'totalEquity', label: 'Shareholders\' Equity', section: 'Equity' },
-    { key: 'retainedEarnings', label: 'Retained Earnings' },
+    { key: 'totalAssets', label: t('fin.row.totalAssets'), section: t('fin.section.assets') },
+    { key: 'currentAssets', label: t('fin.row.currentAssets') },
+    { key: 'cash', label: t('fin.row.cash') },
+    { key: 'receivables', label: t('fin.row.receivables') },
+    { key: 'inventory', label: t('fin.row.inventory') },
+    { key: 'propertyPlantEquipment', label: t('fin.row.ppe') },
+    { key: 'goodwill', label: t('fin.row.goodwill') },
+    { key: 'totalLiabilities', label: t('fin.row.totalLiabilities'), section: t('fin.section.liabilities') },
+    { key: 'currentLiabilities', label: t('fin.row.currentLiabilities') },
+    { key: 'shortTermDebt', label: t('fin.row.shortTermDebt') },
+    { key: 'longTermDebt', label: t('fin.row.longTermDebt') },
+    { key: 'totalDebt', label: t('fin.row.totalDebt') },
+    { key: 'totalEquity', label: t('fin.row.totalEquity'), section: t('fin.section.equity') },
+    { key: 'retainedEarnings', label: t('fin.row.retainedEarnings') },
   ];
 
   return <FinancialTable data={data} rows={rows} currency={currency} />;
 }
 
 function CashFlowTable({ data, currency }: { data: FinancialStatementAnnual[]; currency: string }) {
+  const { t } = useTranslation();
   const rows: RowConfig[] = [
-    { key: 'operatingCashFlow', label: 'Operating Cash Flow' },
-    { key: 'capitalExpenditure', label: 'Capital Expenditure' },
-    { key: 'freeCashFlow', label: 'Free Cash Flow' },
-    { key: 'dividendsPaid', label: 'Dividends Paid' },
-    { key: 'shareRepurchases', label: 'Share Repurchases' },
+    { key: 'operatingCashFlow', label: t('fin.row.operatingCashFlow') },
+    { key: 'capitalExpenditure', label: t('fin.row.capex') },
+    { key: 'freeCashFlow', label: t('fin.row.freeCashFlow') },
+    { key: 'dividendsPaid', label: t('fin.row.dividendsPaid') },
+    { key: 'shareRepurchases', label: t('fin.row.shareRepurchases') },
   ];
 
   return <FinancialTable data={data} rows={rows} currency={currency} />;
@@ -260,7 +277,7 @@ function DataSourceSummary({ financials }: { financials: FinancialStatementAnnua
 
   return (
     <div className="text-xs text-terminal-muted">
-      Sources: {parts.join(' · ')}
+      {parts.join(' · ')}
     </div>
   );
 }
@@ -274,11 +291,13 @@ function FinancialTable({
   rows: RowConfig[];
   currency: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <table className="data-table">
       <thead>
         <tr>
-          <th className="sticky left-0 bg-terminal-card z-10">Metric</th>
+          <th className="sticky left-0 bg-terminal-card z-10">{t('financials.metric')}</th>
           {data.map((year) => (
             <th key={year.fiscalYear} className="text-right">
               {year.fiscalYear}

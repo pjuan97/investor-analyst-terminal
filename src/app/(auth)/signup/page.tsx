@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
 
 export default function SignupPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -18,12 +20,12 @@ export default function SignupPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.passwordsMismatch'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
@@ -58,10 +60,10 @@ export default function SignupPage() {
         <div className="card">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-terminal-text">
-              Create Account
+              {t('auth.createAccount')}
             </h1>
             <p className="text-terminal-muted mt-2">
-              Start analyzing investments today
+              {t('auth.signupSubtitle')}
             </p>
           </div>
 
@@ -74,7 +76,7 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="name" className="label">
-                Name (optional)
+                {t('auth.nameOptional')}
               </label>
               <input
                 id="name"
@@ -88,7 +90,7 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="email" className="label">
-                Email
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -103,7 +105,7 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="password" className="label">
-                Password
+                {t('auth.password')}
               </label>
               <input
                 id="password"
@@ -119,7 +121,7 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="confirmPassword" className="label">
-                Confirm Password
+                {t('auth.confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
@@ -142,9 +144,9 @@ export default function SignupPage() {
           </form>
 
           <p className="mt-6 text-center text-terminal-muted text-sm">
-            Already have an account?{' '}
+            {t('auth.haveAccount')}{' '}
             <Link href="/login" className="text-terminal-accent hover:underline">
-              Sign in
+              {t('auth.signIn')}
             </Link>
           </p>
         </div>

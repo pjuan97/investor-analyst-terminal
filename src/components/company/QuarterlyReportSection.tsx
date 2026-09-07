@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { QuarterlyReport } from '@prisma/client';
+import { useTranslation } from '@/components/language-provider';
 
 interface QuarterlyReportSectionProps {
   ticker: string;
@@ -32,6 +33,7 @@ export function QuarterlyReportSection({
   ticker,
   initialReport,
 }: QuarterlyReportSectionProps) {
+  const { t } = useTranslation();
   const [report, setReport] = useState<QuarterlyReport | null>(initialReport);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function QuarterlyReportSection({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-terminal-text">
-          Latest 10-Q Filing
+          {t('quarterly.title')}
           {report && (
             <span className="ml-2 text-sm text-terminal-muted font-normal">
               Filed {formatDate(report.filingDate)}
@@ -84,7 +86,7 @@ export function QuarterlyReportSection({
           disabled={loading}
           className="btn btn-primary"
         >
-          {loading ? 'Fetching...' : 'Fetch Latest 10-Q'}
+          {loading ? t('quarterly.fetching') : t('quarterly.fetch')}
         </button>
       </div>
 
@@ -106,8 +108,7 @@ export function QuarterlyReportSection({
       {/* No Report State */}
       {!report && !loading && !error && (
         <p className="text-terminal-muted text-sm py-4">
-          No quarterly data fetched yet. Click &quot;Fetch Latest 10-Q&quot; to
-          download the most recent quarterly filing from SEC EDGAR.
+          {t('quarterly.empty')}
         </p>
       )}
 
