@@ -25,7 +25,23 @@ interface ClaudeResponse {
  * Accepts system prompt and user message separately.
  * Extracts all text blocks from the response.
  */
-export async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
+export interface CallClaudeOptions {
+  /**
+   * Give Claude the web_search tool. Defaults to true, which is what the deep
+   * per-investor analyses need. Pass false when the answer should come only
+   * from the data in the prompt — it is markedly faster and cheaper.
+   */
+  webSearch?: boolean;
+  maxTokens?: number;
+}
+
+export async function callClaude(
+  systemPrompt: string,
+  userMessage: string,
+  options: CallClaudeOptions = {}
+): Promise<string> {
+  const { webSearch = true, maxTokens = MAX_TOKENS } = options;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error('ANTHROPIC_API_KEY environment variable is not set');
@@ -40,7 +56,7 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: MAX_TOKENS,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [
         {
@@ -48,12 +64,16 @@ export async function callClaude(systemPrompt: string, userMessage: string): Pro
           content: userMessage,
         },
       ],
-      tools: [
-        {
-          type: 'web_search_20250305',
-          name: 'web_search',
-        },
-      ],
+      ...(webSearch
+        ? {
+            tools: [
+              {
+                type: 'web_search_20250305',
+                name: 'web_search',
+              },
+            ],
+          }
+        : {}),
     }),
   });
 
