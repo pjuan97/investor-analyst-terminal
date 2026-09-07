@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useTranslation } from '@/components/language-provider';
+import { OpportunitiesPanel } from '@/components/dashboard/opportunities-panel';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -161,6 +162,9 @@ export default function DashboardPage() {
           </p>
         )}
       </div>
+
+      {/* Opportunities — deterministic triage over the watchlist */}
+      <OpportunitiesPanel />
 
       {/* Market Indices */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

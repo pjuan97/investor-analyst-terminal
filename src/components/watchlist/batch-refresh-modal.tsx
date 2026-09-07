@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useTranslation } from '@/components/language-provider';
 
 interface BatchRefreshModalProps {
@@ -100,6 +101,51 @@ export function BatchRefreshModal({
   const progressPercent =
     tickers.length > 0 ? (completedCount / tickers.length) * 100 : 0;
 
+  // ---------------------------------------------------------------------
+  // Opportunity scan — runs automatically once the batch finishes, so fresh
+  // data is triaged without the user having to ask. Reads only from the
+  // database, so it adds no external API calls to the refresh.
+  // ---------------------------------------------------------------------
+  const [scanSummary, setScanSummary] = useState<{
+    count: number;
+    top: string[];
+  } | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const scanTriggered = useRef(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      scanTriggered.current = false;
+      setScanSummary(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const finished =
+      progress.length > 0 && completedCount === tickers.length && !isProcessing;
+    if (!finished || scanTriggered.current || successCount === 0) return;
+
+    scanTriggered.current = true;
+    setScanning(true);
+
+    fetch('/api/opportunities', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.opportunities) return;
+        setScanSummary({
+          count: data.opportunities.length,
+          top: data.opportunities
+            .slice(0, 3)
+            .map((o: { ticker: string }) => o.ticker),
+        });
+      })
+      .catch(() => {
+        // A failed scan shouldn't intrude on the refresh result — the panel
+        // on the dashboard will surface the error properly if it persists.
+      })
+      .finally(() => setScanning(false));
+  }, [isProcessing, completedCount, tickers.length, successCount, progress.length]);
+
   const handleClose = () => {
     if (!isProcessing) {
       onComplete();
@@ -154,6 +200,36 @@ export function BatchRefreshModal({
             ))}
           </ul>
         </div>
+
+        {/* Opportunity scan result */}
+        {(scanning || scanSummary) && (
+          <div className="px-4 py-3 border-t border-terminal-border text-sm">
+            {scanning && (
+              <span className="text-terminal-muted">Buscando oportunidades…</span>
+            )}
+            {scanSummary && !scanning && (
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-terminal-text">
+                  {scanSummary.count === 0
+                    ? 'Sin señales nuevas'
+                    : `${scanSummary.count} oportunidad(es)${
+                        scanSummary.top.length > 0
+                          ? `: ${scanSummary.top.join(', ')}`
+                          : ''
+                      }`}
+                </span>
+                {scanSummary.count > 0 && (
+                  <Link
+                    href="/dashboard"
+                    className="text-terminal-accent hover:underline shrink-0"
+                  >
+                    Ver en el dashboard →
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="p-4 border-t border-terminal-border">
