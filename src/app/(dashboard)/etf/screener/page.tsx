@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
 
 // ── Types ───────────────────────────────────────────────────
 interface EtfScreenerResult {
@@ -214,6 +215,7 @@ function RangeFilter({
 
 // ── Main Page ───────────────────────────────────────────────
 export default function EtfScreenerPage() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [results, setResults] = useState<EtfScreenerResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,7 +291,7 @@ export default function EtfScreenerPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-terminal-text">ETF Screener</h1>
+        <h1 className="text-2xl font-bold text-terminal-text">{t('etf.screener.title')}</h1>
         <p className="text-sm text-terminal-muted mt-1">
           Filter ETFs by fund metrics and structure
         </p>

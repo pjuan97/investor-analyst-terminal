@@ -371,7 +371,7 @@ export function OverviewTab({
             <div className="flex items-center gap-4">
               <RatingBadge rating={recommendation.rating} size="large" />
               <div>
-                <div className="text-sm text-terminal-muted">Confidence</div>
+                <div className="text-sm text-terminal-muted">{t('company.confidence')}</div>
                 <div className="text-xl font-bold text-terminal-text">
                   {(Number(recommendation.confidence) * 100).toFixed(0)}%
                 </div>

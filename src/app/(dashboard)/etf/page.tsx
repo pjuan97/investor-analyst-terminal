@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
 
 interface EtfRow {
   id: string;
@@ -31,6 +32,7 @@ function formatPct(value: number | null): string {
 }
 
 export default function EtfPage() {
+  const { t } = useTranslation();
   const [etfs, setEtfs] = useState<EtfRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [ticker, setTicker] = useState('');
@@ -142,9 +144,9 @@ export default function EtfPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-terminal-text">ETF Watchlist</h1>
+          <h1 className="text-2xl font-bold text-terminal-text">{t('etf.watchlist')}</h1>
           <p className="text-sm text-terminal-muted mt-1">
-            Track and analyze Exchange-Traded Funds
+            {t('etf.subtitle')}
           </p>
         </div>
 
@@ -154,7 +156,7 @@ export default function EtfPage() {
               type="text"
               value={ticker}
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
-              placeholder="e.g. VOO"
+              placeholder={t('etf.tickerPlaceholder')}
               className="input w-32 uppercase"
               maxLength={10}
               disabled={adding}
@@ -209,10 +211,10 @@ export default function EtfPage() {
       {/* Table */}
       <div className="card">
         {loading ? (
-          <div className="text-center py-8 text-terminal-muted">Loading ETFs...</div>
+          <div className="text-center py-8 text-terminal-muted">{t('etf.loading')}</div>
         ) : etfs.length === 0 ? (
           <div className="text-center py-8 text-terminal-muted">
-            <p>No ETFs added yet.</p>
+            <p>{t('etf.noneAdded')}</p>
             <p className="text-sm mt-2">Add an ETF ticker above to get started (e.g. VOO, QQQ, SPY).</p>
           </div>
         ) : (
@@ -228,14 +230,14 @@ export default function EtfPage() {
                       className="w-4 h-4 rounded border-terminal-border bg-terminal-bg text-terminal-accent focus:ring-terminal-accent focus:ring-offset-0"
                     />
                   </th>
-                  <th>Ticker</th>
-                  <th>Name</th>
-                  <th className="text-right">Price</th>
-                  <th className="text-right">Change %</th>
+                  <th>{t('etf.col.ticker')}</th>
+                  <th>{t('etf.col.name')}</th>
+                  <th className="text-right">{t('etf.col.price')}</th>
+                  <th className="text-right">{t('etf.col.changePct')}</th>
                   <th className="text-right">AUM</th>
-                  <th className="text-right">Expense Ratio</th>
-                  <th className="text-right">Div Yield</th>
-                  <th>Last Refresh</th>
+                  <th className="text-right">{t('etf.col.expenseRatio')}</th>
+                  <th className="text-right">{t('etf.col.divYield')}</th>
+                  <th>{t('etf.col.lastRefresh')}</th>
                   <th></th>
                 </tr>
               </thead>

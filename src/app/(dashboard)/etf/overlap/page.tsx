@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from '@/components/language-provider';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface TopSector {
@@ -350,6 +351,7 @@ function SideBySideComparison({
 
 // ── Main Page Component ────────────────────────────────────────────
 export default function EtfOverlapPage() {
+  const { t } = useTranslation();
   const [etfOptions, setEtfOptions] = useState<EtfOption[]>([]);
   const [fund1, setFund1] = useState('');
   const [fund2, setFund2] = useState('');
@@ -457,7 +459,7 @@ export default function EtfOverlapPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-terminal-text">ETF Overlap</h1>
+        <h1 className="text-2xl font-bold text-terminal-text">{t('etf.overlap.title')}</h1>
         <p className="text-sm text-terminal-muted mt-1">
           See which holdings any two ETFs have in common
         </p>
@@ -476,7 +478,7 @@ export default function EtfOverlapPage() {
               className="input w-full"
               disabled={loading}
             >
-              <option value="">Select ETF...</option>
+              <option value="">{t('etf.overlap.select')}</option>
               {etfOptions.map((e) => (
                 <option key={e.ticker} value={e.ticker}>
                   {e.ticker} — {e.name}
@@ -495,7 +497,7 @@ export default function EtfOverlapPage() {
               className="input w-full"
               disabled={loading}
             >
-              <option value="">Select ETF...</option>
+              <option value="">{t('etf.overlap.select')}</option>
               {etfOptions.map((e) => (
                 <option key={e.ticker} value={e.ticker}>
                   {e.ticker} — {e.name}
@@ -582,13 +584,13 @@ export default function EtfOverlapPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-terminal-muted">Expense Ratio</span>
+                  <span className="text-terminal-muted">{t('etf.col.expenseRatio')}</span>
                   <span className="text-terminal-text font-mono">
                     {formatPct(data.fund1.expenseRatio)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-terminal-muted">Holdings Analyzed</span>
+                  <span className="text-terminal-muted">{t('etf.overlap.holdingsAnalyzed')}</span>
                   <span className="text-terminal-text font-mono">
                     {data.fund1.totalHoldings}
                   </span>
@@ -609,13 +611,13 @@ export default function EtfOverlapPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-terminal-muted">Expense Ratio</span>
+                  <span className="text-terminal-muted">{t('etf.col.expenseRatio')}</span>
                   <span className="text-terminal-text font-mono">
                     {formatPct(data.fund2.expenseRatio)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-terminal-muted">Holdings Analyzed</span>
+                  <span className="text-terminal-muted">{t('etf.overlap.holdingsAnalyzed')}</span>
                   <span className="text-terminal-text font-mono">
                     {data.fund2.totalHoldings}
                   </span>
@@ -711,14 +713,14 @@ export default function EtfOverlapPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Company</th>
+                    <th>{t('etf.overlap.company')}</th>
                     <th className="text-right">
                       Weight in {data.fund1.ticker}
                     </th>
                     <th className="text-right">
                       Weight in {data.fund2.ticker}
                     </th>
-                    <th className="text-right">Overlap</th>
+                    <th className="text-right">{t('etf.overlap.overlap')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -772,7 +774,7 @@ export default function EtfOverlapPage() {
               </div>
               <div className="p-4 space-y-2">
                 {data.fund1Overweight.length === 0 ? (
-                  <p className="text-sm text-terminal-muted">No significant overweight positions</p>
+                  <p className="text-sm text-terminal-muted">{t('etf.overlap.noOverweight')}</p>
                 ) : (
                   data.fund1Overweight.map((h) => (
                     <div key={h.symbol} className="flex items-center gap-3">
@@ -813,7 +815,7 @@ export default function EtfOverlapPage() {
               </div>
               <div className="p-4 space-y-2">
                 {data.fund2Overweight.length === 0 ? (
-                  <p className="text-sm text-terminal-muted">No significant overweight positions</p>
+                  <p className="text-sm text-terminal-muted">{t('etf.overlap.noOverweight')}</p>
                 ) : (
                   data.fund2Overweight.map((h) => (
                     <div key={h.symbol} className="flex items-center gap-3">
@@ -870,7 +872,7 @@ export default function EtfOverlapPage() {
             {aiLoading && (
               <div className="text-center py-8 text-terminal-muted">
                 <div className="inline-block w-5 h-5 border-2 border-terminal-accent border-t-transparent rounded-full animate-spin mb-2" />
-                <p className="text-sm">Analyzing overlap...</p>
+                <p className="text-sm">{t('etf.overlap.analyzing')}</p>
               </div>
             )}
 

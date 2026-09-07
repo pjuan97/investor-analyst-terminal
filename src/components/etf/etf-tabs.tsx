@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from '@/components/language-provider';
 
 // --------------------------------------------------------------------------
 // Types
@@ -501,6 +502,7 @@ function OverviewTab({
   prices: PriceData[];
   ticker: string;
 }) {
+  const { t } = useTranslation();
   const [priceRange, setPriceRange] = useState<PriceRange>('1y');
 
   const chartData = useMemo(() => {
@@ -526,7 +528,7 @@ function OverviewTab({
         {/* Price History */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="card-header mb-0">Price History</h3>
+            <h3 className="card-header mb-0">{t('etf.tab.priceHistory')}</h3>
             <div className="flex gap-1">
               {(['1m', '3m', '6m', '1y', '3y', 'max'] as PriceRange[]).map(
                 (range) => (
@@ -649,7 +651,7 @@ function OverviewTab({
       <div className="space-y-4">
         {/* Key Metrics with tooltips + benchmarks */}
         <div className="card">
-          <h3 className="card-header">Key Metrics</h3>
+          <h3 className="card-header">{t('etf.keyMetrics')}</h3>
           <div className="space-y-1">
             <MetricRow
               label="Asset Class"
@@ -711,7 +713,7 @@ function OverviewTab({
           Array.isArray(etfDetails.topHoldings) &&
           etfDetails.topHoldings.length > 0 && (
             <div className="card">
-              <h3 className="card-header">Top Holdings</h3>
+              <h3 className="card-header">{t('etf.topHoldings')}</h3>
               <div className="space-y-1.5">
                 {etfDetails.topHoldings.slice(0, 10).map((h, i) => (
                   <div
@@ -773,6 +775,7 @@ function SectorPieChart({
   sectors: Array<{ sector: string; weight: number }> | null;
   netAssets: number | null;
 }) {
+  const { t } = useTranslation();
   if (!sectors || sectors.length === 0) return null;
 
   const data = useMemo(() => {
@@ -799,7 +802,7 @@ function SectorPieChart({
 
   return (
     <div className="card">
-      <h3 className="card-header">Sector Breakdown</h3>
+      <h3 className="card-header">{t('etf.sectorBreakdown')}</h3>
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -999,6 +1002,7 @@ function MetricRow({
 // --------------------------------------------------------------------------
 
 function PerformanceTab({ prices }: { prices: PriceData[] }) {
+  const { t } = useTranslation();
   const [priceRange, setPriceRange] = useState<PriceRange>('1y');
 
   const chartData = useMemo(() => {
@@ -1061,7 +1065,7 @@ function PerformanceTab({ prices }: { prices: PriceData[] }) {
       {/* Price Chart */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="card-header mb-0">Price Chart</h3>
+          <h3 className="card-header mb-0">{t('etf.tab.priceChart')}</h3>
           <div className="flex gap-1">
             {(['1m', '3m', '6m', '1y', '3y', 'max'] as PriceRange[]).map(
               (range) => (
@@ -1163,7 +1167,7 @@ function PerformanceTab({ prices }: { prices: PriceData[] }) {
         {/* Period Returns */}
         <div className="card">
           <div className="mb-4 p-3 bg-terminal-card border border-terminal-border rounded-lg text-xs text-terminal-muted">
-            <p className="font-semibold text-terminal-text mb-1">Period Returns</p>
+            <p className="font-semibold text-terminal-text mb-1">{t('etf.periodReturns')}</p>
             <p>
               How much the ETF gained or lost over each time period, expressed as
               a percentage. A 1Y return of +28% means that $10,000 invested one
@@ -1172,7 +1176,7 @@ function PerformanceTab({ prices }: { prices: PriceData[] }) {
               results.
             </p>
           </div>
-          <h3 className="card-header">Period Returns</h3>
+          <h3 className="card-header">{t('etf.periodReturns')}</h3>
           <div className="space-y-3">
             {returns.map((r) => (
               <div
@@ -1201,7 +1205,7 @@ function PerformanceTab({ prices }: { prices: PriceData[] }) {
         {/* Volatility & Risk */}
         <div className="card">
           <div className="mb-4 p-3 bg-terminal-card border border-terminal-border rounded-lg text-xs text-terminal-muted">
-            <p className="font-semibold text-terminal-text mb-1">Risk &amp; Volatility</p>
+            <p className="font-semibold text-terminal-text mb-1">{t('etf.riskVolatility')}</p>
             <p>
               <strong className="text-terminal-text">52-Week High/Low:</strong>{' '}
               The highest and lowest prices in the past year — shows the range
@@ -1216,12 +1220,12 @@ function PerformanceTab({ prices }: { prices: PriceData[] }) {
               How much the price fluctuates year over year. Below 15% is low
               risk; 15-25% is moderate; above 25% is high.
               <br />
-              <strong className="text-terminal-text">Max Drawdown:</strong> The
+              <strong className="text-terminal-text">{t('etf.maxDrawdown')}</strong> The
               worst peak-to-bottom drop in the period. A -9% drawdown means the
               ETF fell 9% from its highest point before recovering.
             </p>
           </div>
-          <h3 className="card-header">Risk & Volatility</h3>
+          <h3 className="card-header">{t('etf.riskVolatility')}</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between py-1">
               <span className="text-sm text-terminal-muted">52-Week High</span>
@@ -1297,6 +1301,7 @@ function EtfScoreTab({
 }: {
   etfDetails: EtfDetailsData | null;
 }) {
+  const { t } = useTranslation();
   const er = toNum(etfDetails?.expenseRatio);
   const dy = toNum(etfDetails?.dividendYield);
   const holdings = etfDetails?.topHoldings;
@@ -1394,7 +1399,7 @@ function EtfScoreTab({
   return (
     <div className="space-y-6">
       <div className="card">
-        <h3 className="card-header">ETF Composite Score</h3>
+        <h3 className="card-header">{t('etf.compositeScore')}</h3>
         <p className="text-sm text-terminal-muted mb-6">
           Scores are calculated from the fund&apos;s characteristics. They
           represent relative quality within each category — not a buy/sell
@@ -1488,7 +1493,7 @@ function EtfScoreTab({
                 </div>
               )}
               <div className="flex justify-between items-center text-xs">
-                <span className="text-terminal-muted">Sector spread</span>
+                <span className="text-terminal-muted">{t('etf.sectorSpread')}</span>
                 <span
                   className={`font-mono font-medium ${sectorCount > 5 ? 'text-positive' : sectorCount >= 3 ? 'text-warn' : 'text-negative'}`}
                 >
@@ -1565,6 +1570,7 @@ function EtfScoreTab({
 // --------------------------------------------------------------------------
 
 function AnalysisTab({ ticker }: { ticker: string }) {
+  const { t } = useTranslation();
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analysisDate, setAnalysisDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1627,7 +1633,7 @@ function AnalysisTab({ ticker }: { ticker: string }) {
   return (
     <div className="space-y-4">
       <div className="card">
-        <h3 className="card-header">ETF Deep Analysis</h3>
+        <h3 className="card-header">{t('etf.deepAnalysis')}</h3>
         <p className="text-sm text-terminal-muted mb-4">
           Powered by Claude AI with web search. Analyzes this ETF across 11
           fundamental factors including costs, holdings, performance, risk, and

@@ -131,7 +131,7 @@ export function QuarterlyReportSection({
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Metric</th>
+                    <th>{t('financials.metric')}</th>
                     <th className="text-right">
                       Q{report.fiscalQuarter} FY{report.fiscalYear}
                     </th>
@@ -140,7 +140,7 @@ export function QuarterlyReportSection({
                 <tbody>
                   {report.revenue !== null && (
                     <tr>
-                      <td className="text-terminal-text font-medium">Revenue</td>
+                      <td className="text-terminal-text font-medium">{t('quarterly.revenue')}</td>
                       <td className="text-right font-mono">
                         {formatCurrency(report.revenue)}
                       </td>
