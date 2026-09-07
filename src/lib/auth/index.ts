@@ -3,9 +3,29 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
-const AUTH_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || 'dev-secret-key'
-);
+/**
+ * Returns the signing key for session JWTs.
+ *
+ * Deliberately throws instead of falling back to a default: a hardcoded
+ * fallback would live in the (public) source tree, and a misconfigured
+ * deployment would silently sign sessions with a publicly known key
+ * instead of failing where someone would notice.
+ *
+ * Read lazily rather than at module load so a missing value surfaces at
+ * request time rather than breaking the build.
+ */
+function getAuthSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET;
+
+  if (!secret) {
+    throw new Error(
+      'AUTH_SECRET is not set. Generate one with `openssl rand -base64 32` ' +
+        'and add it to .env (locally) or to your hosting environment variables.'
+    );
+  }
+
+  return new TextEncoder().encode(secret);
+}
 
 const SESSION_DURATION_DAYS = parseInt(
   process.env.SESSION_DURATION_DAYS || '7',
@@ -46,14 +66,18 @@ export async function createToken(payload: TokenPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(expiresAt)
-    .sign(AUTH_SECRET);
+    .sign(getAuthSecret());
 
   return token;
 }
 
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
+  // Resolved outside the try so a missing AUTH_SECRET propagates as a config
+  // error instead of being swallowed and reported as an invalid token.
+  const secret = getAuthSecret();
+
   try {
-    const { payload } = await jwtVerify(token, AUTH_SECRET);
+    const { payload } = await jwtVerify(token, secret);
     return payload as unknown as TokenPayload;
   } catch {
     return null;
