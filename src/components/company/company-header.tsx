@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
 
 interface CompanyHeaderProps {
   company: {
@@ -34,6 +35,7 @@ export function CompanyHeader({
   userId,
 }: CompanyHeaderProps) {
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -91,10 +93,10 @@ export function CompanyHeader({
   };
 
   const getQualityBadge = (quality: number | null) => {
-    if (quality === null) return { text: 'Unknown', color: 'bg-gray-800 text-gray-400' };
-    if (quality >= 0.8) return { text: 'High Quality', color: 'badge-quality-high' };
-    if (quality >= 0.5) return { text: 'Medium Quality', color: 'badge-quality-medium' };
-    return { text: 'Low Quality', color: 'badge-quality-low' };
+    if (quality === null) return { text: t('badge.qualityUnknown'), color: 'bg-gray-800 text-gray-400' };
+    if (quality >= 0.8) return { text: t('company.quality.high'), color: 'badge-quality-high' };
+    if (quality >= 0.5) return { text: t('company.quality.medium'), color: 'badge-quality-medium' };
+    return { text: t('company.quality.low'), color: 'badge-quality-low' };
   };
 
   const qualityBadge = getQualityBadge(dataQuality);
@@ -118,7 +120,7 @@ export function CompanyHeader({
             d="M15 19l-7-7 7-7"
           />
         </svg>
-        Watchlist
+        {t('company.backToWatchlist')}
       </Link>
       <div className="flex items-start justify-between">
         <div>
@@ -154,11 +156,12 @@ export function CompanyHeader({
           </div>
           {priceDate && (
             <div className="text-sm text-terminal-muted">
-              as of{' '}
-              {new Date(priceDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
+              {t('company.asOf', {
+                date: new Date(priceDate).toLocaleDateString(locale, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                }),
               })}
             </div>
           )}
@@ -168,14 +171,14 @@ export function CompanyHeader({
       <div className="mt-6 pt-6 border-t border-terminal-border flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div>
-            <div className="text-sm text-terminal-muted">Recommendation</div>
+            <div className="text-sm text-terminal-muted">{t('company.recommendation')}</div>
             <div className={`text-2xl font-bold ${getRatingColor(recommendation)}`}>
-              {recommendation || 'No Data'}
+              {recommendation || t('company.noDataRating')}
             </div>
           </div>
           {confidence !== null && (
             <div>
-              <div className="text-sm text-terminal-muted">Confidence</div>
+              <div className="text-sm text-terminal-muted">{t('company.confidence')}</div>
               <div className="text-2xl font-bold text-terminal-text">
                 {(confidence * 100).toFixed(0)}%
               </div>
@@ -188,13 +191,13 @@ export function CompanyHeader({
             onClick={handleWatchlistToggle}
             className={`btn ${isInWatchlist ? 'btn-secondary' : 'btn-primary'}`}
           >
-            {isInWatchlist ? 'In Watchlist ✓' : 'Add to Watchlist'}
+            {isInWatchlist ? t('company.inWatchlist') : t('company.addToWatchlist')}
           </button>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="btn btn-secondary"
-            title="Refresh data from providers"
+            title={t('company.refreshTitle')}
           >
             <svg
               className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -209,7 +212,7 @@ export function CompanyHeader({
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            {isRefreshing && <span className="ml-2">Loading...</span>}
+            {isRefreshing && <span className="ml-2">{t('company.loading')}</span>}
           </button>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BatchRefreshModal } from './batch-refresh-modal';
+import { useTranslation } from '@/components/language-provider';
 
 type Market = 'BVC' | 'WALL_STREET';
 
@@ -47,6 +48,7 @@ function getSortValue(item: WatchlistItem, key: SortKey): number | string | null
 
 export function WatchlistTable({ data }: WatchlistTableProps) {
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const [selectedTickers, setSelectedTickers] = useState<Set<string>>(new Set());
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [marketFilter, setMarketFilter] = useState<MarketFilter>('ALL');
@@ -88,7 +90,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm('Remove this ticker from your watchlist?')) return;
+    if (!confirm(t('watchlist.removeConfirm'))) return;
 
     await fetch(`/api/watchlist/${id}`, { method: 'DELETE' });
     router.refresh();
@@ -133,7 +135,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
 
   const formatDate = (date: Date | null) => {
     if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
     });
@@ -146,7 +148,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
 
   const getRatingBadge = (rating: 'BUY' | 'HOLD' | 'SELL' | null) => {
     if (!rating) {
-      return <span className="badge bg-gray-800 text-gray-400">No data</span>;
+      return <span className="badge bg-gray-800 text-gray-400">{t('badge.noData')}</span>;
     }
 
     const classes = {
@@ -161,7 +163,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
   const getQualityBadge = (quality: number | null) => {
     if (quality === null) {
       return (
-        <span className="badge bg-gray-800 text-gray-400" title="Data quality not yet assessed">
+        <span className="badge bg-gray-800 text-gray-400" title={t('badge.qualityUnknownTitle')}>
           ?
         </span>
       );
@@ -169,20 +171,20 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
 
     if (quality >= 0.8) {
       return (
-        <span className="badge badge-quality-high" title="High: 80%+ of financial metrics available">
-          High
+        <span className="badge badge-quality-high" title={t('badge.qualityHighTitle')}>
+          {t('badge.qualityHigh')}
         </span>
       );
     } else if (quality >= 0.5) {
       return (
-        <span className="badge badge-quality-medium" title="Medium: 50-79% of financial metrics available">
-          Medium
+        <span className="badge badge-quality-medium" title={t('badge.qualityMediumTitle')}>
+          {t('badge.qualityMedium')}
         </span>
       );
     } else {
       return (
-        <span className="badge badge-quality-low" title="Low: Less than 50% of financial metrics available">
-          Low
+        <span className="badge badge-quality-low" title={t('badge.qualityLowTitle')}>
+          {t('badge.qualityLow')}
         </span>
       );
     }
@@ -191,14 +193,14 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
   const getMarketBadge = (market: Market) => {
     if (market === 'BVC') {
       return (
-        <span className="badge badge-market-bvc" title="Bolsa de Valores de Colombia">
-          BVC
+        <span className="badge badge-market-bvc" title={t('watchlist.marketBvcTitle')}>
+          {t('watchlist.filter.bvc')}
         </span>
       );
     }
     return (
-      <span className="badge badge-market-us" title="Wall Street (NYSE / Nasdaq)">
-        Wall Street
+      <span className="badge badge-market-us" title={t('watchlist.marketUsTitle')}>
+        {t('watchlist.filter.wallStreet')}
       </span>
     );
   };
@@ -212,9 +214,9 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
             <div className="flex rounded-md border border-terminal-border overflow-hidden">
               {(
                 [
-                  { id: 'ALL', label: 'All' },
-                  { id: 'WALL_STREET', label: 'Wall Street' },
-                  { id: 'BVC', label: 'BVC' },
+                  { id: 'ALL', labelKey: 'watchlist.filter.all' },
+                  { id: 'WALL_STREET', labelKey: 'watchlist.filter.wallStreet' },
+                  { id: 'BVC', labelKey: 'watchlist.filter.bvc' },
                 ] as const
               ).map((opt) => (
                 <button
@@ -226,12 +228,12 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                       : 'bg-terminal-card text-terminal-muted hover:text-terminal-text'
                   }`}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </button>
               ))}
             </div>
             {selectedTickers.size > 0 && (
-              <span className="text-sm text-terminal-muted">{selectedTickers.size} selected</span>
+              <span className="text-sm text-terminal-muted">{t('watchlist.selected', { n: selectedTickers.size })}</span>
             )}
           </div>
           {selectedTickers.size > 0 && (
@@ -252,7 +254,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
-              Refresh Selected ({selectedTickers.size})
+              {t('watchlist.refreshSelected', { n: selectedTickers.size })}
             </button>
           )}
         </div>
@@ -271,32 +273,32 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                 />
               </th>
               <th className="cursor-pointer select-none" onClick={() => handleSort('ticker')}>
-                Ticker{sortIndicator('ticker')}
+                {t('watchlist.col.ticker')}{sortIndicator('ticker')}
               </th>
               <th className="cursor-pointer select-none" onClick={() => handleSort('name')}>
-                Company{sortIndicator('name')}
+                {t('watchlist.col.company')}{sortIndicator('name')}
               </th>
-              <th>Market</th>
+              <th>{t('watchlist.col.market')}</th>
               <th
                 className="text-right cursor-pointer select-none"
                 onClick={() => handleSort('price')}
               >
-                Price{sortIndicator('price')}
+                {t('watchlist.col.price')}{sortIndicator('price')}
               </th>
-              <th>Recommendation</th>
+              <th>{t('watchlist.col.recommendation')}</th>
               <th
                 className="text-right cursor-pointer select-none"
                 onClick={() => handleSort('confidence')}
               >
-                Confidence{sortIndicator('confidence')}
+                {t('watchlist.col.confidence')}{sortIndicator('confidence')}
               </th>
-              <th title="Percentage of financial data fields populated from SEC filings">Data Quality</th>
+              <th title={t('watchlist.col.dataQualityTitle')}>{t('watchlist.col.dataQuality')}</th>
               <th
                 className="cursor-pointer select-none"
-                title="Date when recommendation was last generated"
+                title={t('watchlist.col.analyzedTitle')}
                 onClick={() => handleSort('lastUpdate')}
               >
-                Analyzed{sortIndicator('lastUpdate')}
+                {t('watchlist.col.analyzed')}{sortIndicator('lastUpdate')}
               </th>
               <th></th>
             </tr>
@@ -332,7 +334,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                   <div>{formatDate(item.lastUpdate)}</div>
                   {item.lastRefreshedAt && (
                     <div className="text-xs text-terminal-muted">
-                      Refreshed: {formatDate(item.lastRefreshedAt)}
+                      {t('watchlist.refreshedOn', { date: formatDate(item.lastRefreshedAt) })}
                     </div>
                   )}
                 </td>
@@ -340,7 +342,7 @@ export function WatchlistTable({ data }: WatchlistTableProps) {
                   <button
                     onClick={() => handleRemove(item.id)}
                     className="text-terminal-muted hover:text-danger-semantic transition-colors"
-                    title="Remove from watchlist"
+                    title={t('watchlist.removeTitle')}
                   >
                     <svg
                       className="w-4 h-4"

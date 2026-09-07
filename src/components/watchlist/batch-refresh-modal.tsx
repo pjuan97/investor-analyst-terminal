@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/components/language-provider';
 
 interface BatchRefreshModalProps {
   tickers: string[];
@@ -23,6 +24,7 @@ export function BatchRefreshModal({
   onClose,
   onComplete,
 }: BatchRefreshModalProps) {
+  const { t } = useTranslation();
   const [progress, setProgress] = useState<TickerProgress[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -113,12 +115,16 @@ export function BatchRefreshModal({
         {/* Header */}
         <div className="p-4 border-b border-terminal-border">
           <h2 className="text-lg font-semibold text-terminal-text">
-            Batch Refresh
+            {t('batch.title')}
           </h2>
           <p className="text-sm text-terminal-muted mt-1">
             {isProcessing
-              ? `Processing ${tickers[currentIndex] || '...'} (${completedCount + 1}/${tickers.length})`
-              : `Completed: ${successCount} succeeded, ${errorCount} failed`}
+              ? t('batch.processing', {
+                  ticker: tickers[currentIndex] || '...',
+                  done: completedCount + 1,
+                  total: tickers.length,
+                })
+              : t('batch.completed', { ok: successCount, failed: errorCount })}
           </p>
         </div>
 
@@ -160,7 +166,7 @@ export function BatchRefreshModal({
                 : 'bg-terminal-accent text-terminal-bg hover:bg-terminal-accent/90'
             }`}
           >
-            {isProcessing ? 'Processing...' : 'Close & Refresh'}
+            {isProcessing ? t('batch.processingButton') : t('batch.closeButton')}
           </button>
         </div>
       </div>

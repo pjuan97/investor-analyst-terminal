@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/components/language-provider';
 
 interface AddTickerFormProps {
   userId: string;
@@ -9,6 +10,7 @@ interface AddTickerFormProps {
 
 export function AddTickerForm({ userId }: AddTickerFormProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [ticker, setTicker] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,7 +62,7 @@ export function AddTickerForm({ userId }: AddTickerFormProps) {
         )}
       </div>
       <button type="submit" disabled={loading} className="btn btn-primary">
-        {loading ? 'Adding...' : 'Add Ticker'}
+        {loading ? t('watchlist.adding') : t('watchlist.addTicker')}
       </button>
     </form>
   );

@@ -3,24 +3,26 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode } from 'react';
+import { useTranslation } from '@/components/language-provider';
+import type { TranslationKey } from '@/lib/i18n/translations';
 
 interface NavItem {
-  name: string;
+  nameKey: TranslationKey;
   href: string;
   icon: ReactNode;
 }
 
 interface NavGroup {
-  label: string | null;
+  labelKey: TranslationKey | null;
   items: NavItem[];
 }
 
 const navGroups: NavGroup[] = [
   {
-    label: null,
+    labelKey: null,
     items: [
       {
-        name: 'Dashboard',
+        nameKey: 'nav.dashboard',
         href: '/dashboard',
         icon: (
           <svg
@@ -41,10 +43,10 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: 'STOCKS',
+    labelKey: 'nav.group.stocks',
     items: [
       {
-        name: 'Watchlist',
+        nameKey: 'nav.watchlist',
         href: '/watchlist',
         icon: (
           <svg
@@ -63,7 +65,7 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
-        name: 'Screener',
+        nameKey: 'nav.screener',
         href: '/screener',
         icon: (
           <svg
@@ -82,7 +84,7 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
-        name: 'Earnings',
+        nameKey: 'nav.earnings',
         href: '/earnings',
         icon: (
           <svg
@@ -101,10 +103,10 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: 'ETFs',
+    labelKey: 'nav.group.etfs',
     items: [
       {
-        name: 'Watchlist',
+        nameKey: 'nav.watchlist',
         href: '/etf',
         icon: (
           <svg
@@ -123,7 +125,7 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
-        name: 'Screener',
+        nameKey: 'nav.screener',
         href: '/etf/screener',
         icon: (
           <svg
@@ -142,7 +144,7 @@ const navGroups: NavGroup[] = [
         ),
       },
       {
-        name: 'Overlap',
+        nameKey: 'nav.overlap',
         href: '/etf/overlap',
         icon: (
           <svg
@@ -161,7 +163,7 @@ const navGroups: NavGroup[] = [
 ];
 
 const settingsItem: NavItem = {
-  name: 'Settings',
+  nameKey: 'nav.settings',
   href: '/settings',
   icon: (
     <svg
@@ -188,6 +190,7 @@ const settingsItem: NavItem = {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
@@ -202,18 +205,16 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-terminal-card border-r border-terminal-border flex flex-col">
       <div className="p-4 border-b border-terminal-border">
-        <h1 className="text-lg font-bold text-terminal-text">
-          Investor Terminal
-        </h1>
-        <p className="text-xs text-terminal-muted">Analysis & Recommendations</p>
+        <h1 className="text-lg font-bold text-terminal-text">{t('app.name')}</h1>
+        <p className="text-xs text-terminal-muted">{t('app.tagline')}</p>
       </div>
 
       <nav className="flex-1 p-4">
         {navGroups.map((group, gi) => (
           <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
-            {group.label && (
+            {group.labelKey && (
               <p className="px-3 mb-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">
-                {group.label}
+                {t(group.labelKey)}
               </p>
             )}
             <ul className="space-y-0.5">
@@ -221,7 +222,7 @@ export function Sidebar() {
                 <li key={item.href}>
                   <Link href={item.href} className={linkClasses(item.href)}>
                     {item.icon}
-                    <span>{item.name}</span>
+                    <span>{t(item.nameKey)}</span>
                   </Link>
                 </li>
               ))}
@@ -232,14 +233,14 @@ export function Sidebar() {
         <div className="mt-auto pt-4">
           <Link href={settingsItem.href} className={linkClasses(settingsItem.href)}>
             {settingsItem.icon}
-            <span>{settingsItem.name}</span>
+            <span>{t(settingsItem.nameKey)}</span>
           </Link>
         </div>
       </nav>
 
       <div className="p-4 border-t border-terminal-border">
         <div className="text-xs text-terminal-muted">
-          <p>Data Sources:</p>
+          <p>{t('nav.dataSources')}</p>
           <p className="mt-1">
             <span className="inline-block w-2 h-2 rounded-full bg-success-dot mr-1"></span>
             SEC EDGAR

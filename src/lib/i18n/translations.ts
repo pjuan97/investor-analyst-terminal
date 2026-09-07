@@ -1,0 +1,276 @@
+// ============================================================================
+// TRANSLATIONS
+// ============================================================================
+//
+// `en` is the source of truth: its keys define TranslationKey, and `es` is
+// typed as Record<TranslationKey, string>. A missing Spanish string is a
+// compile error rather than an English word leaking into the Spanish UI.
+
+export const en = {
+  // --- Nav / shell -------------------------------------------------------
+  'app.name': 'Investor Terminal',
+  'app.tagline': 'Analysis & Recommendations',
+  'nav.dashboard': 'Dashboard',
+  'nav.group.stocks': 'STOCKS',
+  'nav.group.etfs': 'ETFS',
+  'nav.watchlist': 'Watchlist',
+  'nav.screener': 'Screener',
+  'nav.earnings': 'Earnings',
+  'nav.overlap': 'Overlap',
+  'nav.settings': 'Settings',
+  'nav.dataSources': 'Data Sources:',
+  'header.signOut': 'Sign out',
+  'lang.toggleTitle': 'Cambiar a español',
+
+  // --- Dashboard ---------------------------------------------------------
+  'dashboard.goodMorning': 'Good morning',
+  'dashboard.goodAfternoon': 'Good afternoon',
+  'dashboard.goodEvening': 'Good evening',
+  'dashboard.lastUpdated': 'Last updated:',
+  'dashboard.noMarketData': 'Unable to load market data',
+  'dashboard.marketNews': 'Market News',
+  'dashboard.noNews': 'No news available',
+  'dashboard.gainers': 'Gainers',
+  'dashboard.losers': 'Losers',
+  'dashboard.col.ticker': 'Ticker',
+  'dashboard.col.last': 'Last',
+  'dashboard.col.change': 'Chg',
+  'dashboard.col.percent': '%',
+  'dashboard.tab.sectors': 'Sectors',
+  'dashboard.tab.regions': 'Regions',
+  'dashboard.tab.assets': 'Assets',
+  'dashboard.tab.factors': 'Factors',
+  'time.justNow': 'just now',
+  'time.minutesAgo': '{n}m ago',
+  'time.hoursAgo': '{n}h ago',
+  'time.daysAgo': '{n}d ago',
+
+  // --- Watchlist ---------------------------------------------------------
+  'watchlist.title': 'Watchlist',
+  'watchlist.subtitle': 'Track and analyze your investment opportunities',
+  'watchlist.addTicker': 'Add Ticker',
+  'watchlist.adding': 'Adding...',
+  'watchlist.empty': 'Your watchlist is empty',
+  'watchlist.emptyHint': 'Add a ticker above to start tracking a company',
+  'watchlist.filter.all': 'All',
+  'watchlist.filter.wallStreet': 'Wall Street',
+  'watchlist.filter.bvc': 'BVC',
+  'watchlist.selected': '{n} selected',
+  'watchlist.refreshSelected': 'Refresh Selected ({n})',
+  'watchlist.removeConfirm': 'Remove this ticker from your watchlist?',
+  'watchlist.removeTitle': 'Remove from watchlist',
+  'watchlist.col.ticker': 'Ticker',
+  'watchlist.col.company': 'Company',
+  'watchlist.col.market': 'Market',
+  'watchlist.col.price': 'Price',
+  'watchlist.col.recommendation': 'Recommendation',
+  'watchlist.col.confidence': 'Confidence',
+  'watchlist.col.dataQuality': 'Data Quality',
+  'watchlist.col.analyzed': 'Analyzed',
+  'watchlist.col.dataQualityTitle':
+    'Percentage of financial data fields populated from SEC filings',
+  'watchlist.col.analyzedTitle': 'Date when recommendation was last generated',
+  'watchlist.refreshedOn': 'Refreshed: {date}',
+  'watchlist.marketBvcTitle': 'Bolsa de Valores de Colombia',
+  'watchlist.marketUsTitle': 'Wall Street (NYSE / Nasdaq)',
+
+  // --- Shared badges -----------------------------------------------------
+  'badge.noData': 'No data',
+  'badge.qualityHigh': 'High',
+  'badge.qualityMedium': 'Medium',
+  'badge.qualityLow': 'Low',
+  'badge.qualityUnknown': 'Unknown',
+  'badge.qualityHighTitle': 'High: 80%+ of financial metrics available',
+  'badge.qualityMediumTitle': 'Medium: 50-79% of financial metrics available',
+  'badge.qualityLowTitle': 'Low: Less than 50% of financial metrics available',
+  'badge.qualityUnknownTitle': 'Data quality not yet assessed',
+
+  // --- Batch refresh -----------------------------------------------------
+  'batch.title': 'Batch Refresh',
+  'batch.processing': 'Processing {ticker} ({done}/{total})',
+  'batch.completed': 'Completed: {ok} succeeded, {failed} failed',
+  'batch.processingButton': 'Processing...',
+  'batch.closeButton': 'Close & Refresh',
+
+  // --- Company page ------------------------------------------------------
+  'company.backToWatchlist': 'Watchlist',
+  'company.inWatchlist': 'In Watchlist ✓',
+  'company.addToWatchlist': 'Add to Watchlist',
+  'company.refreshTitle': 'Refresh data from providers',
+  'company.loading': 'Loading...',
+  'company.recommendation': 'Recommendation',
+  'company.confidence': 'Confidence',
+  'company.noDataRating': 'No Data',
+  'company.asOf': 'as of {date}',
+  'company.quality.high': 'High Quality',
+  'company.quality.medium': 'Medium Quality',
+  'company.quality.low': 'Low Quality',
+  'company.tab.overview': 'Overview',
+  'company.tab.financials': 'Financials',
+  'company.tab.metrics': 'Metrics',
+  'company.tab.models': 'Model Breakdown',
+  'company.tab.peers': 'Peers',
+
+  // --- Financials tab ----------------------------------------------------
+  'financials.incomeStatement': 'Income Statement',
+  'financials.balanceSheet': 'Balance Sheet',
+  'financials.cashFlow': 'Cash Flow',
+  'financials.noData': 'No financial data available yet.',
+  'financials.noDataHint': 'Use the refresh button to fetch data from SEC EDGAR.',
+  'financials.whatToLookFor': 'What to look for',
+  'financials.sources': 'Sources:',
+  'financials.metric': 'Metric',
+
+  // --- Auth --------------------------------------------------------------
+  'auth.appTitle': 'Investor Analyst Terminal',
+  'auth.signInSubtitle': 'Sign in to your account',
+  'auth.email': 'Email',
+  'auth.password': 'Password',
+  'auth.signIn': 'Sign in',
+  'auth.signingIn': 'Signing in...',
+  'auth.noAccount': "Don't have an account?",
+  'auth.signUp': 'Sign up',
+
+  // --- Generic -----------------------------------------------------------
+  'common.loading': 'Loading...',
+  'common.error': 'An error occurred',
+  'common.retry': 'Retry',
+  'common.none': '—',
+} as const;
+
+export type TranslationKey = keyof typeof en;
+
+export const es: Record<TranslationKey, string> = {
+  // --- Nav / shell -------------------------------------------------------
+  'app.name': 'Investor Terminal',
+  'app.tagline': 'Análisis y Recomendaciones',
+  'nav.dashboard': 'Inicio',
+  'nav.group.stocks': 'ACCIONES',
+  'nav.group.etfs': 'ETFS',
+  'nav.watchlist': 'Seguimiento',
+  'nav.screener': 'Filtro',
+  'nav.earnings': 'Resultados',
+  'nav.overlap': 'Solapamiento',
+  'nav.settings': 'Ajustes',
+  'nav.dataSources': 'Fuentes de datos:',
+  'header.signOut': 'Cerrar sesión',
+  'lang.toggleTitle': 'Switch to English',
+
+  // --- Dashboard ---------------------------------------------------------
+  'dashboard.goodMorning': 'Buenos días',
+  'dashboard.goodAfternoon': 'Buenas tardes',
+  'dashboard.goodEvening': 'Buenas noches',
+  'dashboard.lastUpdated': 'Actualizado:',
+  'dashboard.noMarketData': 'No se pudieron cargar los datos del mercado',
+  'dashboard.marketNews': 'Noticias del mercado',
+  'dashboard.noNews': 'No hay noticias disponibles',
+  'dashboard.gainers': 'Suben',
+  'dashboard.losers': 'Bajan',
+  'dashboard.col.ticker': 'Ticker',
+  'dashboard.col.last': 'Último',
+  'dashboard.col.change': 'Cambio',
+  'dashboard.col.percent': '%',
+  'dashboard.tab.sectors': 'Sectores',
+  'dashboard.tab.regions': 'Regiones',
+  'dashboard.tab.assets': 'Activos',
+  'dashboard.tab.factors': 'Factores',
+  'time.justNow': 'ahora mismo',
+  'time.minutesAgo': 'hace {n}m',
+  'time.hoursAgo': 'hace {n}h',
+  'time.daysAgo': 'hace {n}d',
+
+  // --- Watchlist ---------------------------------------------------------
+  'watchlist.title': 'Seguimiento',
+  'watchlist.subtitle': 'Sigue y analiza tus oportunidades de inversión',
+  'watchlist.addTicker': 'Agregar',
+  'watchlist.adding': 'Agregando...',
+  'watchlist.empty': 'Tu lista de seguimiento está vacía',
+  'watchlist.emptyHint': 'Agrega un ticker arriba para empezar a seguir una empresa',
+  'watchlist.filter.all': 'Todas',
+  'watchlist.filter.wallStreet': 'Wall Street',
+  'watchlist.filter.bvc': 'BVC',
+  'watchlist.selected': '{n} seleccionada(s)',
+  'watchlist.refreshSelected': 'Actualizar selección ({n})',
+  'watchlist.removeConfirm': '¿Quitar este ticker de tu lista de seguimiento?',
+  'watchlist.removeTitle': 'Quitar de la lista',
+  'watchlist.col.ticker': 'Ticker',
+  'watchlist.col.company': 'Empresa',
+  'watchlist.col.market': 'Mercado',
+  'watchlist.col.price': 'Precio',
+  'watchlist.col.recommendation': 'Recomendación',
+  'watchlist.col.confidence': 'Confianza',
+  'watchlist.col.dataQuality': 'Calidad de datos',
+  'watchlist.col.analyzed': 'Analizado',
+  'watchlist.col.dataQualityTitle':
+    'Porcentaje de campos financieros disponibles a partir de los reportes',
+  'watchlist.col.analyzedTitle': 'Fecha en que se generó la última recomendación',
+  'watchlist.refreshedOn': 'Actualizado: {date}',
+  'watchlist.marketBvcTitle': 'Bolsa de Valores de Colombia',
+  'watchlist.marketUsTitle': 'Wall Street (NYSE / Nasdaq)',
+
+  // --- Shared badges -----------------------------------------------------
+  'badge.noData': 'Sin datos',
+  'badge.qualityHigh': 'Alta',
+  'badge.qualityMedium': 'Media',
+  'badge.qualityLow': 'Baja',
+  'badge.qualityUnknown': 'Sin evaluar',
+  'badge.qualityHighTitle': 'Alta: 80%+ de las métricas financieras disponibles',
+  'badge.qualityMediumTitle': 'Media: 50-79% de las métricas financieras disponibles',
+  'badge.qualityLowTitle': 'Baja: menos del 50% de las métricas financieras disponibles',
+  'badge.qualityUnknownTitle': 'Aún no se ha evaluado la calidad de los datos',
+
+  // --- Batch refresh -----------------------------------------------------
+  'batch.title': 'Actualización por lotes',
+  'batch.processing': 'Procesando {ticker} ({done}/{total})',
+  'batch.completed': 'Completado: {ok} exitosas, {failed} fallidas',
+  'batch.processingButton': 'Procesando...',
+  'batch.closeButton': 'Cerrar y actualizar',
+
+  // --- Company page ------------------------------------------------------
+  'company.backToWatchlist': 'Seguimiento',
+  'company.inWatchlist': 'En seguimiento ✓',
+  'company.addToWatchlist': 'Agregar a seguimiento',
+  'company.refreshTitle': 'Actualizar datos desde los proveedores',
+  'company.loading': 'Cargando...',
+  'company.recommendation': 'Recomendación',
+  'company.confidence': 'Confianza',
+  'company.noDataRating': 'Sin datos',
+  'company.asOf': 'al {date}',
+  'company.quality.high': 'Calidad alta',
+  'company.quality.medium': 'Calidad media',
+  'company.quality.low': 'Calidad baja',
+  'company.tab.overview': 'Resumen',
+  'company.tab.financials': 'Financieros',
+  'company.tab.metrics': 'Métricas',
+  'company.tab.models': 'Modelos',
+  'company.tab.peers': 'Comparables',
+
+  // --- Financials tab ----------------------------------------------------
+  'financials.incomeStatement': 'Estado de resultados',
+  'financials.balanceSheet': 'Balance general',
+  'financials.cashFlow': 'Flujo de caja',
+  'financials.noData': 'Aún no hay datos financieros disponibles.',
+  'financials.noDataHint': 'Usa el botón de actualizar para traer datos de SEC EDGAR.',
+  'financials.whatToLookFor': 'Qué mirar',
+  'financials.sources': 'Fuentes:',
+  'financials.metric': 'Métrica',
+
+  // --- Auth --------------------------------------------------------------
+  'auth.appTitle': 'Investor Analyst Terminal',
+  'auth.signInSubtitle': 'Inicia sesión en tu cuenta',
+  'auth.email': 'Correo',
+  'auth.password': 'Contraseña',
+  'auth.signIn': 'Iniciar sesión',
+  'auth.signingIn': 'Iniciando sesión...',
+  'auth.noAccount': '¿No tienes cuenta?',
+  'auth.signUp': 'Regístrate',
+
+  // --- Generic -----------------------------------------------------------
+  'common.loading': 'Cargando...',
+  'common.error': 'Ocurrió un error',
+  'common.retry': 'Reintentar',
+  'common.none': '—',
+};
+
+export const dictionaries = { en, es } as const;
+export type Language = keyof typeof dictionaries;

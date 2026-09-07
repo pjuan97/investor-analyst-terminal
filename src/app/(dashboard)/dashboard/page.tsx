@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { useTranslation } from '@/components/language-provider';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,18 +55,20 @@ interface MarketData {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function timeAgo(dateStr: string): string {
+type Translate = ReturnType<typeof useTranslation>['t'];
+
+function timeAgo(dateStr: string, t: Translate): string {
   if (!dateStr) return '';
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diffMs = now - then;
   const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('time.justNow');
+  if (mins < 60) return t('time.minutesAgo', { n: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return t('time.hoursAgo', { n: hrs });
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return t('time.daysAgo', { n: days });
 }
 
 function formatPrice(n: number): string {
@@ -77,6 +80,7 @@ function formatPrice(n: number): string {
 // ---------------------------------------------------------------------------
 
 export default function DashboardPage() {
+  const { t, locale } = useTranslation();
   const [data, setData] = useState<MarketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -100,7 +104,7 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [fetchMarketData]);
 
-  const today = new Date().toLocaleDateString('en-US', {
+  const today = new Date().toLocaleDateString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -109,9 +113,9 @@ export default function DashboardPage() {
 
   const greeting = (() => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return t('dashboard.goodMorning');
+    if (h < 18) return t('dashboard.goodAfternoon');
+    return t('dashboard.goodEvening');
   })();
 
   if (loading) {
@@ -148,8 +152,8 @@ export default function DashboardPage() {
         </div>
         {lastUpdated && (
           <p className="text-xs text-terminal-muted">
-            Last updated:{' '}
-            {lastUpdated.toLocaleTimeString('en-US', {
+            {t('dashboard.lastUpdated')}{' '}
+            {lastUpdated.toLocaleTimeString(locale, {
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
@@ -165,7 +169,7 @@ export default function DashboardPage() {
         ))}
         {indices.length === 0 && (
           <div className="col-span-4 card text-center py-8 text-terminal-muted">
-            Unable to load market data
+            {t('dashboard.noMarketData')}
           </div>
         )}
       </div>
@@ -174,7 +178,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* News (2/3) */}
         <div className="lg:col-span-2 card max-h-[700px] overflow-y-auto">
-          <h3 className="card-header">Market News</h3>
+          <h3 className="card-header">{t('dashboard.marketNews')}</h3>
           {news.length > 0 ? (
             <div className="divide-y divide-terminal-border">
               {news.map((item, i) => (
@@ -182,7 +186,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-terminal-muted text-sm py-4">No news available</p>
+            <p className="text-terminal-muted text-sm py-4">{t('dashboard.noNews')}</p>
           )}
         </div>
 
@@ -202,7 +206,7 @@ export default function DashboardPage() {
                         : 'border-transparent text-terminal-muted hover:text-terminal-text'
                     }`}
                   >
-                    {tab === 'gainers' ? 'Gainers' : 'Losers'}
+                    {tab === 'gainers' ? t('dashboard.gainers') : t('dashboard.losers')}
                   </button>
                 ))}
               </div>
@@ -211,9 +215,9 @@ export default function DashboardPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-terminal-muted uppercase">
-                      <th className="text-left pb-1 font-medium">Ticker</th>
-                      <th className="text-right pb-1 font-medium">Last</th>
-                      <th className="text-right pb-1 font-medium">Chg</th>
+                      <th className="text-left pb-1 font-medium">{t('dashboard.col.ticker')}</th>
+                      <th className="text-right pb-1 font-medium">{t('dashboard.col.last')}</th>
+                      <th className="text-right pb-1 font-medium">{t('dashboard.col.change')}</th>
                       <th className="text-right pb-1 font-medium">%</th>
                     </tr>
                   </thead>
@@ -380,6 +384,8 @@ function IndexCard({ data }: { data: IndexData }) {
 }
 
 function NewsRow({ item }: { item: NewsItem }) {
+  const { t } = useTranslation();
+
   return (
     <div className="py-3 first:pt-0 last:pb-0">
       <a
@@ -392,7 +398,7 @@ function NewsRow({ item }: { item: NewsItem }) {
       </a>
       <div className="flex items-center gap-2 mt-1">
         <span className="text-xs text-terminal-muted">{item.source}</span>
-        <span className="text-xs text-terminal-muted">{timeAgo(item.pubDate)}</span>
+        <span className="text-xs text-terminal-muted">{timeAgo(item.pubDate, t)}</span>
       </div>
     </div>
   );

@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -45,9 +47,9 @@ export default function LoginPage() {
         <div className="card">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-terminal-text">
-              Investor Analyst Terminal
+              {t('auth.appTitle')}
             </h1>
-            <p className="text-terminal-muted mt-2">Sign in to your account</p>
+            <p className="text-terminal-muted mt-2">{t('auth.signInSubtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -59,7 +61,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="email" className="label">
-                Email
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -74,7 +76,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="label">
-                Password
+                {t('auth.password')}
               </label>
               <input
                 id="password"
@@ -92,14 +94,14 @@ export default function LoginPage() {
               disabled={loading}
               className="btn btn-primary w-full"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? t('auth.signingIn') : t('auth.signIn')}
             </button>
           </form>
 
           <p className="mt-6 text-center text-terminal-muted text-sm">
-            Don&apos;t have an account?{' '}
+            {t('auth.noAccount')}{' '}
             <Link href="/signup" className="text-terminal-accent hover:underline">
-              Sign up
+              {t('auth.signUp')}
             </Link>
           </p>
         </div>

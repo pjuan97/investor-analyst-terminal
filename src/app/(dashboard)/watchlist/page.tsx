@@ -2,6 +2,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { WatchlistTable } from '@/components/watchlist/watchlist-table';
 import { AddTickerForm } from '@/components/watchlist/add-ticker-form';
+import { PageHeading, T } from '@/components/i18n-text';
 
 export default async function WatchlistPage() {
   const session = await getSession();
@@ -47,19 +48,17 @@ export default async function WatchlistPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-terminal-text">Watchlist</h1>
-          <p className="text-terminal-muted mt-1">
-            Track and analyze your investment opportunities
-          </p>
-        </div>
+        <PageHeading titleKey="watchlist.title" subtitleKey="watchlist.subtitle" />
         <AddTickerForm userId={session.userId} />
       </div>
 
       {tableData.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-terminal-muted">
-            Your watchlist is empty. Add a ticker to get started.
+            <T k="watchlist.empty" />
+          </p>
+          <p className="text-sm text-terminal-muted mt-2">
+            <T k="watchlist.emptyHint" />
           </p>
         </div>
       ) : (
