@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { RecommendationDaily } from '@prisma/client';
 import type { ModelVotes, ModelVote } from '@/types';
+import { useTranslation } from '@/components/language-provider';
 
 interface LLMAnalysis {
   buffett?: string;
@@ -38,6 +39,7 @@ interface ModelsTabProps {
 }
 
 export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
+  const { t } = useTranslation();
   const [llmAnalysis, setLlmAnalysis] = useState<LLMAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -205,7 +207,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
     return (
       <div className="card text-center py-12">
         <div className="text-4xl mb-4">📊</div>
-        <p className="text-terminal-text font-medium">No model analysis available yet</p>
+        <p className="text-terminal-text font-medium">{t('models.noAnalysis')}</p>
         <p className="text-sm text-terminal-muted mt-2">
           Click the &quot;Refresh&quot; button above to fetch data and run the investment models.
         </p>
@@ -269,7 +271,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
       {/* Consensus Summary */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="card-header mb-0">Model Consensus</h3>
+          <h3 className="card-header mb-0">{t('models.consensus')}</h3>
           <div className="flex items-center gap-4 text-sm">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-success-dot"></span>
@@ -299,7 +301,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
 
       {/* Individual Model Analysis */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-terminal-text">Detailed Model Analysis</h3>
+        <h3 className="text-lg font-semibold text-terminal-text">{t('models.detailedAnalysis')}</h3>
         {models.map((model) => (
           <ModelDetailCard
             key={model.id}
@@ -316,10 +318,10 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
 
       {/* How It Works */}
       <div className="card">
-        <h3 className="card-header">How Recommendations Work</h3>
+        <h3 className="card-header">{t('models.howItWorks')}</h3>
         <div className="grid md:grid-cols-2 gap-6 text-sm">
           <div>
-            <h4 className="font-medium text-terminal-text mb-2">Voting System</h4>
+            <h4 className="font-medium text-terminal-text mb-2">{t('models.votingSystem')}</h4>
             <ul className="space-y-1.5 text-terminal-muted">
               <li className="flex items-start gap-2">
                 <span className="text-terminal-accent">•</span>
@@ -336,7 +338,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-terminal-text mb-2">Confidence Scores</h4>
+            <h4 className="font-medium text-terminal-text mb-2">{t('models.confidenceScores')}</h4>
             <ul className="space-y-1.5 text-terminal-muted">
               <li className="flex items-start gap-2">
                 <span className="text-success">•</span>
@@ -359,7 +361,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
       <div className="card">
         <div className="mb-4">
           <h3 className="card-header mb-1">Deep Analysis &mdash; Full Investor Framework</h3>
-          <p className="text-xs text-terminal-muted">Powered by Claude AI with web research</p>
+          <p className="text-xs text-terminal-muted">{t('models.poweredBy')}</p>
         </div>
 
         {/* Model Selection */}
@@ -389,7 +391,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
           {/* Hurdle Rate Input (Buffett or Seessel selected) */}
           {(selectedDeepModels.has('buffett') || selectedDeepModels.has('seessel')) && (
             <div className="flex items-center gap-3">
-              <label className="text-sm text-terminal-muted">Hurdle Rate:</label>
+              <label className="text-sm text-terminal-muted">{t('models.hurdleRate')}</label>
               <input
                 type="number"
                 value={hurdleRate}
@@ -405,7 +407,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
           {/* NRR Input (only when Seessel selected) */}
           {selectedDeepModels.has('seessel') && (
             <div className="flex items-center gap-3">
-              <label className="text-sm text-terminal-muted">NRR % (optional):</label>
+              <label className="text-sm text-terminal-muted">{t('models.nrr')}</label>
               <input
                 type="number"
                 value={nrrValue || ''}
@@ -415,7 +417,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
                 placeholder="e.g. 115"
                 className="w-24 px-2 py-1 rounded bg-terminal-bg border border-terminal-border text-terminal-text text-sm font-mono text-center placeholder:text-terminal-muted/50"
               />
-              <span className="text-xs text-terminal-muted">From IR materials</span>
+              <span className="text-xs text-terminal-muted">{t('models.fromIr')}</span>
             </div>
           )}
 
@@ -548,7 +550,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
                   className="w-full flex items-center justify-between p-3 bg-terminal-accent/5 hover:bg-terminal-accent/10 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-terminal-accent font-bold text-sm">Combined Summary</span>
+                    <span className="text-terminal-accent font-bold text-sm">{t('models.combinedSummary')}</span>
                   </div>
                   <svg
                     className={`w-4 h-4 text-terminal-accent transition-transform ${
@@ -607,6 +609,7 @@ export function ModelsTab({ recommendation, ticker }: ModelsTabProps) {
 }
 
 function ModelSummaryCard({ icon, name, vote }: { icon: string; name: string; vote?: ModelVote }) {
+  const { t } = useTranslation();
   if (!vote) {
     return (
       <div className="p-3 bg-terminal-bg rounded-lg border border-terminal-border text-center">
@@ -650,6 +653,7 @@ function ModelDetailCard({
   vote?: ModelVote;
   llmAnalysis?: string;
 }) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAIDetail, setShowAIDetail] = useState(false);
 
@@ -736,7 +740,7 @@ function ModelDetailCard({
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        {isExpanded ? 'Hide Details' : 'Show Details'}
+        {isExpanded ? t('models.hideDetails') : t('models.showDetails')}
       </button>
 
       {isExpanded && (
@@ -746,7 +750,7 @@ function ModelDetailCard({
 
           {/* Analysis Reasons */}
           <div>
-            <h5 className="text-sm font-medium text-terminal-text mb-2">Key Findings</h5>
+            <h5 className="text-sm font-medium text-terminal-text mb-2">{t('models.keyFindings')}</h5>
             <div className="space-y-2">
               {vote.reasons.map((reason, i) => {
                 const category = categorizeReason(reason);
@@ -766,7 +770,7 @@ function ModelDetailCard({
           {/* Key Metrics */}
           {vote.keyMetrics && Object.keys(vote.keyMetrics).length > 0 && (
             <div>
-              <h5 className="text-sm font-medium text-terminal-text mb-2">Metrics Used</h5>
+              <h5 className="text-sm font-medium text-terminal-text mb-2">{t('models.metricsUsed')}</h5>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {Object.entries(vote.keyMetrics).map(([key, value]) => (
                   <div key={key} className="bg-terminal-bg rounded p-2">

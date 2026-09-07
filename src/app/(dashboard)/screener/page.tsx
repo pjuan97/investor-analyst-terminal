@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
+import type { TranslationKey } from '@/lib/i18n/translations';
 
 // ── Types ───────────────────────────────────────────────────
 interface ScreenerResult {
@@ -120,7 +122,7 @@ function fmtRatio(v: number | null): string {
 // ── Column defs ─────────────────────────────────────────────
 interface Column {
   key: string;
-  label: string;
+  label: TranslationKey;
   sortKey: string;
   render: (r: ScreenerResult) => React.ReactNode;
   align?: 'left' | 'right';
@@ -129,7 +131,7 @@ interface Column {
 const columns: Column[] = [
   {
     key: 'ticker',
-    label: 'Ticker',
+    label: 'watchlist.col.ticker',
     sortKey: 'ticker',
     render: (r) => (
       <Link
@@ -142,7 +144,7 @@ const columns: Column[] = [
   },
   {
     key: 'name',
-    label: 'Name',
+    label: 'screener.col.name',
     sortKey: 'name',
     render: (r) => (
       <span className="text-terminal-text truncate max-w-[180px] inline-block">
@@ -152,7 +154,7 @@ const columns: Column[] = [
   },
   {
     key: 'sector',
-    label: 'Sector',
+    label: 'screener.col.sector',
     sortKey: 'sector',
     render: (r) => (
       <span className="text-terminal-muted text-xs truncate max-w-[140px] inline-block">
@@ -162,7 +164,7 @@ const columns: Column[] = [
   },
   {
     key: 'recommendation',
-    label: 'Rec',
+    label: 'screener.col.rec',
     sortKey: 'recommendation',
     render: (r) => {
       if (!r.recommendation) return <span className="text-terminal-muted">—</span>;
@@ -177,35 +179,35 @@ const columns: Column[] = [
   },
   {
     key: 'grossMargin',
-    label: 'Gross M',
+    label: 'screener.col.grossMargin',
     sortKey: 'gross_margin',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtPct(r.grossMargin)}</span>,
   },
   {
     key: 'netMargin',
-    label: 'Net M',
+    label: 'screener.col.netMargin',
     sortKey: 'net_margin',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtPct(r.netMargin)}</span>,
   },
   {
     key: 'roe',
-    label: 'ROE',
+    label: 'screener.col.roe',
     sortKey: 'roe',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtPct(r.roe)}</span>,
   },
   {
     key: 'peRatio',
-    label: 'P/E',
+    label: 'screener.col.pe',
     sortKey: 'pe_ratio',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtMultiple(r.peRatio)}</span>,
   },
   {
     key: 'revenueGrowth',
-    label: 'Rev Gr',
+    label: 'screener.col.revGrowth',
     sortKey: 'revenue_growth',
     align: 'right',
     render: (r) => {
@@ -216,21 +218,21 @@ const columns: Column[] = [
   },
   {
     key: 'debtToEquity',
-    label: 'D/E',
+    label: 'screener.col.debtEquity',
     sortKey: 'debt_to_equity',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtRatio(r.debtToEquity)}</span>,
   },
   {
     key: 'marketCap',
-    label: 'Mkt Cap',
+    label: 'screener.col.marketCap',
     sortKey: 'market_cap',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtMarketCap(r.marketCap)}</span>,
   },
   {
     key: 'qualityScore',
-    label: 'Quality',
+    label: 'screener.col.quality',
     sortKey: 'quality_score',
     align: 'right',
     render: (r) => <span className="font-mono">{fmtScore(r.qualityScore)}</span>,
@@ -253,6 +255,8 @@ function RangeFilter({
   onChange: (key: keyof Filters, val: string) => void;
   suffix?: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="mb-3">
       <label className="text-xs text-terminal-muted font-medium block mb-1">
@@ -261,14 +265,14 @@ function RangeFilter({
       <div className="flex gap-2">
         <input
           type="number"
-          placeholder="Min"
+          placeholder={t('screener.min')}
           value={filters[minKey]}
           onChange={(e) => onChange(minKey, e.target.value)}
           className="input text-xs py-1.5 px-2 w-full"
         />
         <input
           type="number"
-          placeholder="Max"
+          placeholder={t('screener.max')}
           value={filters[maxKey]}
           onChange={(e) => onChange(maxKey, e.target.value)}
           className="input text-xs py-1.5 px-2 w-full"
@@ -280,6 +284,7 @@ function RangeFilter({
 
 // ── Main Page ───────────────────────────────────────────────
 export default function ScreenerPage() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [results, setResults] = useState<ScreenerResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -353,9 +358,9 @@ export default function ScreenerPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-terminal-text">Screener</h1>
+        <h1 className="text-2xl font-bold text-terminal-text">{t('screener.title')}</h1>
         <p className="text-sm text-terminal-muted mt-1">
-          Filter companies by fundamental metrics
+          {t('screener.subtitle')}
         </p>
       </div>
 
@@ -366,20 +371,20 @@ export default function ScreenerPage() {
           <div className="card space-y-1">
             {/* Profitability */}
             <h3 className="text-xs font-semibold text-terminal-accent uppercase tracking-wider mb-0.5">
-              Profitability
+              {t('screener.section.profitability')}
             </h3>
             <p className="text-xs text-terminal-muted mb-2">
-              How much of each revenue dollar the company keeps
+              {t('screener.section.profitabilityDesc')}
             </p>
             <RangeFilter
-              label="Gross Margin"
+              label={t('screener.filter.grossMargin')}
               minKey="minGrossMargin"
               maxKey="maxGrossMargin"
               filters={filters}
               onChange={handleFilterChange}
             />
             <RangeFilter
-              label="Net Margin"
+              label={t('screener.filter.netMargin')}
               minKey="minNetMargin"
               maxKey="maxNetMargin"
               filters={filters}
@@ -388,10 +393,10 @@ export default function ScreenerPage() {
 
             {/* Returns */}
             <h3 className="text-xs font-semibold text-terminal-accent uppercase tracking-wider pt-2 mb-0.5">
-              Returns
+              {t('screener.section.returns')}
             </h3>
             <p className="text-xs text-terminal-muted mb-2">
-              How efficiently the company uses capital to generate profit
+              {t('screener.section.returnsDesc')}
             </p>
             <RangeFilter
               label="ROE"
@@ -410,20 +415,20 @@ export default function ScreenerPage() {
 
             {/* Growth */}
             <h3 className="text-xs font-semibold text-terminal-accent uppercase tracking-wider pt-2 mb-0.5">
-              Growth
+              {t('screener.section.growth')}
             </h3>
             <p className="text-xs text-terminal-muted mb-2">
-              Year-over-year expansion in earnings and revenue
+              {t('screener.section.growthDesc')}
             </p>
             <RangeFilter
-              label="Revenue Growth"
+              label={t('screener.filter.revenueGrowth')}
               minKey="minRevenueGrowth"
               maxKey="maxRevenueGrowth"
               filters={filters}
               onChange={handleFilterChange}
             />
             <RangeFilter
-              label="EPS Growth"
+              label={t('screener.filter.epsGrowth')}
               minKey="minEpsGrowth"
               maxKey="maxEpsGrowth"
               filters={filters}
@@ -432,13 +437,13 @@ export default function ScreenerPage() {
 
             {/* Valuation */}
             <h3 className="text-xs font-semibold text-terminal-accent uppercase tracking-wider pt-2 mb-0.5">
-              Valuation
+              {t('screener.section.valuation')}
             </h3>
             <p className="text-xs text-terminal-muted mb-2">
-              Price relative to earnings and assets
+              {t('screener.section.valuationDesc')}
             </p>
             <RangeFilter
-              label="P/E Ratio"
+              label={t('screener.filter.peRatio')}
               minKey="minPE"
               maxKey="maxPE"
               filters={filters}
@@ -446,7 +451,7 @@ export default function ScreenerPage() {
               suffix="x"
             />
             <RangeFilter
-              label="EV/EBITDA"
+              label={t('screener.filter.evEbitda')}
               minKey="minEVEBITDA"
               maxKey="maxEVEBITDA"
               filters={filters}
@@ -462,7 +467,7 @@ export default function ScreenerPage() {
               Size, leverage, and overall data quality score
             </p>
             <RangeFilter
-              label="Market Cap"
+              label={t('screener.filter.marketCap')}
               minKey="minMarketCap"
               maxKey="maxMarketCap"
               filters={filters}
@@ -470,7 +475,7 @@ export default function ScreenerPage() {
               suffix="$B"
             />
             <RangeFilter
-              label="Quality Score"
+              label={t('screener.filter.qualityScore')}
               minKey="minQualityScore"
               maxKey="maxQualityScore"
               filters={filters}
@@ -478,7 +483,7 @@ export default function ScreenerPage() {
               suffix="0-1"
             />
             <RangeFilter
-              label="Debt / Equity"
+              label={t('screener.filter.debtEquity')}
               minKey="minDebtToEquity"
               maxKey="maxDebtToEquity"
               filters={filters}
@@ -496,7 +501,7 @@ export default function ScreenerPage() {
                 onChange={(e) => handleFilterChange('sector', e.target.value)}
                 className="input text-xs py-1.5 px-2 w-full"
               >
-                <option value="">All Sectors</option>
+                <option value="">{t('screener.allSectors')}</option>
                 {sectors.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -543,24 +548,18 @@ export default function ScreenerPage() {
             <div className="px-4 py-3 border-b border-terminal-border">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-terminal-muted">
-                  Showing{' '}
-                  <span className="text-terminal-text font-medium">
-                    {results.length}
-                  </span>{' '}
-                  {results.length === 1 ? 'company' : 'companies'}
+                  {t(results.length === 1 ? 'screener.showingOne' : 'screener.showing', {
+                    n: results.length,
+                  })}
                 </span>
                 {loading && (
                   <span className="text-xs text-terminal-accent animate-pulse">
-                    Loading...
+                    {t('common.loading')}
                   </span>
                 )}
               </div>
               <p className="text-xs text-terminal-muted/70 mt-1">
-                Data reflects latest annual filings. Refresh tickers in{' '}
-                <Link href="/watchlist" className="text-terminal-accent hover:underline">
-                  Watchlist
-                </Link>{' '}
-                to update.
+                {t('screener.dataNote')}
               </p>
             </div>
 
@@ -579,7 +578,7 @@ export default function ScreenerPage() {
                             col.align === 'right' ? 'text-right' : 'text-left'
                           } ${isActive ? 'bg-terminal-accent/10' : ''}`}
                         >
-                          {col.label}
+                          {t(col.label)}
                           <span
                             className={`ml-1 inline-block transition-colors ${
                               isActive

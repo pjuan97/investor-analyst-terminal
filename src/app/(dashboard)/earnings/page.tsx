@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useTranslation } from '@/components/language-provider';
 
 type Range = '1w' | '2w' | '1m';
 type Filter = 'all' | 'watchlist';
@@ -39,6 +40,7 @@ function formatDate(dateStr: string, dayOfWeek: string): string {
 }
 
 export default function EarningsPage() {
+  const { t } = useTranslation();
   const [earnings, setEarnings] = useState<EarningsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<Range>('1m');
@@ -138,14 +140,14 @@ export default function EarningsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Company</th>
-                  <th className="text-right">EPS Est</th>
-                  <th className="text-right">EPS Actual</th>
-                  <th className="text-right">Surprise</th>
-                  <th className="text-right">Rev Est</th>
-                  <th className="text-right">Rev Actual</th>
-                  <th>Status</th>
+                  <th>{t('earnings.col.date')}</th>
+                  <th>{t('earnings.col.company')}</th>
+                  <th className="text-right">{t('earnings.col.epsEst')}</th>
+                  <th className="text-right">{t('earnings.col.epsActual')}</th>
+                  <th className="text-right">{t('earnings.col.surprise')}</th>
+                  <th className="text-right">{t('earnings.col.revEst')}</th>
+                  <th className="text-right">{t('earnings.col.revActual')}</th>
+                  <th>{t('earnings.col.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -186,7 +188,7 @@ export default function EarningsPage() {
                             <>
                               <span
                                 className="text-terminal-accent text-xs"
-                                title="In your watchlist"
+                                title={t('earnings.inWatchlist')}
                               >
                                 ★
                               </span>

@@ -18,6 +18,7 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '@/components/language-provider';
 
 interface OverviewTabProps {
   recommendation: RecommendationDaily | null;
@@ -71,6 +72,7 @@ export function OverviewTab({
   prices,
   financials,
 }: OverviewTabProps) {
+  const { t } = useTranslation();
   const [priceRange, setPriceRange] = useState<PriceRange>('1y');
   const [companyData, setCompanyData] = useState<Company>(company);
   const [enriching, setEnriching] = useState(false);
@@ -190,7 +192,7 @@ export function OverviewTab({
               {/* Header */}
               <div className="flex items-start justify-between mb-1">
                 <div>
-                  <h3 className="card-header mb-0">Price History</h3>
+                  <h3 className="card-header mb-0">{t('overview.priceHistory')}</h3>
                   <div className="flex items-baseline gap-3 mt-1">
                     <span className="text-2xl font-bold text-terminal-text font-mono">
                       ${currentPrice.toFixed(2)}
@@ -301,50 +303,50 @@ export function OverviewTab({
             </>
           ) : (
             <div className="text-center py-16 text-terminal-muted">
-              <p>No price data available.</p>
+              <p>{t('overview.noPriceData')}</p>
             </div>
           )}
         </div>
 
         {/* Right: Key Metrics (1/3) */}
         <div className="card overflow-y-auto max-h-[480px]">
-          <h3 className="card-header">Key Metrics</h3>
+          <h3 className="card-header">{t('overview.keyMetrics')}</h3>
 
           {latestMetrics ? (
             <div className="space-y-4 text-sm">
               {/* Market Data */}
-              <MetricsSection title="MARKET DATA">
-                <MetricRow label="Market Cap" value={fmt(latestMetrics.marketCap, 'money', companyData.currency)} />
-                <MetricRow label="Enterprise Value" value={fmt(latestMetrics.enterpriseValue, 'money', companyData.currency)} />
-                <MetricRow label="P/E Ratio" value={fmt(latestMetrics.peRatio, 'ratio')} />
-                <MetricRow label="P/B Ratio" value={fmt(latestMetrics.pbRatio, 'ratio')} />
+              <MetricsSection title={t('metric.group.marketData')}>
+                <MetricRow label={t('metric.marketCap')} value={fmt(latestMetrics.marketCap, 'money', companyData.currency)} />
+                <MetricRow label={t('metric.enterpriseValue')} value={fmt(latestMetrics.enterpriseValue, 'money', companyData.currency)} />
+                <MetricRow label={t('metric.peRatio')} value={fmt(latestMetrics.peRatio, 'ratio')} />
+                <MetricRow label={t('metric.pbRatio')} value={fmt(latestMetrics.pbRatio, 'ratio')} />
               </MetricsSection>
 
               {/* Efficiency */}
-              <MetricsSection title="EFFICIENCY">
-                <MetricRow label="ROE" value={fmt(latestMetrics.roe, 'pct')} />
-                <MetricRow label="ROIC" value={fmt(latestMetrics.roic, 'pct')} />
-                <MetricRow label="ROA" value={fmt(latestMetrics.roa, 'pct')} />
-                <MetricRow label="Net Margin" value={fmt(latestMetrics.netMargin, 'pct')} />
-                <MetricRow label="Gross Margin" value={fmt(latestMetrics.grossMargin, 'pct')} />
+              <MetricsSection title={t('metric.group.efficiency')}>
+                <MetricRow label={t('metric.roe')} value={fmt(latestMetrics.roe, 'pct')} />
+                <MetricRow label={t('metric.roic')} value={fmt(latestMetrics.roic, 'pct')} />
+                <MetricRow label={t('metric.roa')} value={fmt(latestMetrics.roa, 'pct')} />
+                <MetricRow label={t('metric.netMargin')} value={fmt(latestMetrics.netMargin, 'pct')} />
+                <MetricRow label={t('metric.grossMargin')} value={fmt(latestMetrics.grossMargin, 'pct')} />
               </MetricsSection>
 
               {/* Valuation */}
-              <MetricsSection title="VALUATION">
-                <MetricRow label="EV/EBITDA" value={fmt(latestMetrics.evToEbitda, 'ratio')} />
-                <MetricRow label="Earnings Yield" value={fmt(latestMetrics.earningsYield, 'pct')} />
-                <MetricRow label="Debt/Equity" value={fmt(latestMetrics.debtToEquity, 'ratio')} />
+              <MetricsSection title={t('metric.group.valuation')}>
+                <MetricRow label={t('metric.evEbitda')} value={fmt(latestMetrics.evToEbitda, 'ratio')} />
+                <MetricRow label={t('metric.earningsYield')} value={fmt(latestMetrics.earningsYield, 'pct')} />
+                <MetricRow label={t('metric.debtEquity')} value={fmt(latestMetrics.debtToEquity, 'ratio')} />
               </MetricsSection>
 
               {/* Growth */}
-              <MetricsSection title="GROWTH">
-                <GrowthRow label="Revenue Growth" value={latestMetrics.revenueGrowth} />
-                <GrowthRow label="EPS Growth" value={latestMetrics.epsGrowth} />
-                <GrowthRow label="FCF Growth" value={latestMetrics.fcfGrowth} />
+              <MetricsSection title={t('metric.group.growth')}>
+                <GrowthRow label={t('metric.revenueGrowth')} value={latestMetrics.revenueGrowth} />
+                <GrowthRow label={t('metric.epsGrowth')} value={latestMetrics.epsGrowth} />
+                <GrowthRow label={t('metric.fcfGrowth')} value={latestMetrics.fcfGrowth} />
               </MetricsSection>
 
               {/* Quality Score */}
-              <MetricsSection title="QUALITY SCORE">
+              <MetricsSection title={t('metric.group.qualityScore')}>
                 <QualityBar
                   score={latestMetrics.qualityScore ? Number(latestMetrics.qualityScore) : null}
                 />
@@ -352,7 +354,7 @@ export function OverviewTab({
             </div>
           ) : (
             <div className="text-center py-8 text-terminal-muted">
-              <p>No metrics calculated yet.</p>
+              <p>{t('overview.noMetrics')}</p>
             </div>
           )}
         </div>
@@ -362,7 +364,7 @@ export function OverviewTab({
       {/* SECTION 2 — Investment Recommendation                             */}
       {/* ================================================================= */}
       <div className="card">
-        <h3 className="card-header">Investment Recommendation</h3>
+        <h3 className="card-header">{t('overview.investmentRecommendation')}</h3>
 
         {recommendation ? (
           <div className="space-y-4">
@@ -380,12 +382,12 @@ export function OverviewTab({
             </div>
 
             <div className="p-4 bg-terminal-bg rounded-lg border border-terminal-border">
-              <div className="text-sm text-terminal-muted mb-2">Summary</div>
+              <div className="text-sm text-terminal-muted mb-2">{t('overview.summary')}</div>
               <p className="text-terminal-text">{recommendation.explanationShort}</p>
             </div>
 
             <div className="prose prose-invert max-w-none">
-              <div className="text-sm text-terminal-muted mb-2">Detailed Analysis</div>
+              <div className="text-sm text-terminal-muted mb-2">{t('overview.detailedAnalysis')}</div>
               <div className="text-sm text-terminal-text whitespace-pre-wrap">
                 {recommendation.explanationFull}
               </div>
@@ -406,7 +408,7 @@ export function OverviewTab({
           </div>
         ) : (
           <div className="text-center py-8 text-terminal-muted">
-            <p>No recommendation available yet.</p>
+            <p>{t('overview.noRecommendation')}</p>
             <p className="text-sm mt-2">
               Click the &quot;Refresh&quot; button above to fetch data and generate a
               recommendation.
@@ -428,7 +430,7 @@ export function OverviewTab({
               disabled={enriching}
               className="px-3 py-1 text-xs rounded bg-terminal-accent text-white hover:bg-terminal-accent/80 disabled:opacity-50 transition-colors"
             >
-              {enriching ? 'Fetching profile...' : 'Enrich Profile'}
+              {enriching ? t('overview.fetchingProfile') : t('overview.enrichProfile')}
             </button>
           )}
         </div>
@@ -443,25 +445,25 @@ export function OverviewTab({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
             {companyData.sector && (
               <div className="flex justify-between py-1">
-                <span className="text-terminal-muted">Sector</span>
+                <span className="text-terminal-muted">{t('overview.sector')}</span>
                 <span className="text-terminal-text">{companyData.sector}</span>
               </div>
             )}
             {companyData.industry && (
               <div className="flex justify-between py-1">
-                <span className="text-terminal-muted">Industry</span>
+                <span className="text-terminal-muted">{t('overview.industry')}</span>
                 <span className="text-terminal-text">{companyData.industry}</span>
               </div>
             )}
             {companyData.exchange && (
               <div className="flex justify-between py-1">
-                <span className="text-terminal-muted">Exchange</span>
+                <span className="text-terminal-muted">{t('overview.exchange')}</span>
                 <span className="text-terminal-text">{companyData.exchange}</span>
               </div>
             )}
             {companyData.website && (
               <div className="flex justify-between py-1">
-                <span className="text-terminal-muted">Website</span>
+                <span className="text-terminal-muted">{t('overview.website')}</span>
                 <a
                   href={companyData.website}
                   target="_blank"
@@ -546,8 +548,9 @@ function RatingBadge({
 }
 
 function QualityBar({ score }: { score: number | null }) {
+  const { t } = useTranslation();
   if (score === null) {
-    return <div className="text-sm text-terminal-muted">Not calculated</div>;
+    return <div className="text-sm text-terminal-muted">{t('overview.notCalculated')}</div>;
   }
 
   const percentage = score * 100;
@@ -557,7 +560,7 @@ function QualityBar({ score }: { score: number | null }) {
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
-        <span className="text-terminal-muted">Score</span>
+        <span className="text-terminal-muted">{t('overview.score')}</span>
         <span className="text-terminal-text font-mono">{percentage.toFixed(0)}%</span>
       </div>
       <div className="h-2 bg-terminal-border rounded-full overflow-hidden">

@@ -1,41 +1,53 @@
 import { checkProvidersHealth } from '@/lib/providers';
+import { T } from '@/components/i18n-text';
+import { ProviderStatus } from '@/components/settings/provider-status';
+import type { TranslationKey } from '@/lib/i18n/translations';
 
+// Server Component: it awaits provider health and reads process.env, so
+// translation happens through the <T /> leaf and the client ProviderStatus
+// rather than the context hook, which is client-only.
 export default async function SettingsPage() {
   const health = await checkProvidersHealth();
+  const fmpConfigured = !!process.env.FMP_API_KEY;
+  const cronEnabled = process.env.ENABLE_CRON === 'true';
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-terminal-text">Settings</h1>
+        <h1 className="text-2xl font-bold text-terminal-text">
+          <T k="settings.title" />
+        </h1>
         <p className="text-terminal-muted mt-1">
-          System configuration and data provider status
+          <T k="settings.subtitle" />
         </p>
       </div>
 
       {/* Provider Status */}
       <div className="card">
-        <h2 className="card-header">Data Providers</h2>
+        <h2 className="card-header">
+          <T k="settings.dataProviders" />
+        </h2>
         <div className="space-y-4">
           <ProviderStatus
             name="SEC EDGAR"
-            description="Financial statements and company filings"
+            descriptionKey="settings.provider.secDesc"
             status={health.sec ? 'active' : 'error'}
-            details="Free, no API key required"
+            detailsKey="settings.provider.free"
           />
           <ProviderStatus
             name="Stooq"
-            description="Historical price data"
+            descriptionKey="settings.provider.stooqDesc"
             status={health.prices ? 'active' : 'error'}
-            details="Free, no API key required"
+            detailsKey="settings.provider.free"
           />
           <ProviderStatus
             name="Financial Modeling Prep"
-            description="Enhanced financial data"
-            status={process.env.FMP_API_KEY ? 'active' : 'inactive'}
-            details={
-              process.env.FMP_API_KEY
-                ? 'API key configured'
-                : 'Optional - set FMP_API_KEY to enable'
+            descriptionKey="settings.provider.fmpDesc"
+            status={fmpConfigured ? 'active' : 'inactive'}
+            detailsKey={
+              (fmpConfigured
+                ? 'settings.apiKeyConfigured'
+                : 'settings.fmpOptional') as TranslationKey
             }
           />
         </div>
@@ -43,30 +55,30 @@ export default async function SettingsPage() {
 
       {/* Cron Status */}
       <div className="card">
-        <h2 className="card-header">Automated Updates</h2>
+        <h2 className="card-header">
+          <T k="settings.automatedUpdates" />
+        </h2>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-terminal-text">Daily Update Job</p>
+            <p className="text-terminal-text">
+              <T k="settings.dailyUpdateJob" />
+            </p>
             <p className="text-sm text-terminal-muted">
-              Updates prices, checks new filings, recalculates recommendations
+              <T k="settings.cronDesc" />
             </p>
           </div>
           <div className="flex items-center gap-4">
             <span
               className={`inline-flex items-center gap-2 text-sm ${
-                process.env.ENABLE_CRON === 'true'
-                  ? 'text-success'
-                  : 'text-terminal-muted'
+                cronEnabled ? 'text-success' : 'text-terminal-muted'
               }`}
             >
               <span
                 className={`w-2 h-2 rounded-full ${
-                  process.env.ENABLE_CRON === 'true'
-                    ? 'bg-success-dot'
-                    : 'bg-gray-500'
+                  cronEnabled ? 'bg-success-dot' : 'bg-gray-500'
                 }`}
               />
-              {process.env.ENABLE_CRON === 'true' ? 'Enabled' : 'Disabled'}
+              <T k={cronEnabled ? 'settings.enabled' : 'settings.disabled'} />
             </span>
             <RunUpdateButton />
           </div>
@@ -75,59 +87,23 @@ export default async function SettingsPage() {
 
       {/* Environment Info */}
       <div className="card">
-        <h2 className="card-header">Environment</h2>
+        <h2 className="card-header">
+          <T k="settings.environment" />
+        </h2>
         <dl className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <dt className="text-terminal-muted">Mode</dt>
-            <dd className="text-terminal-text font-mono">
-              {process.env.NODE_ENV}
-            </dd>
+            <dt className="text-terminal-muted">
+              <T k="settings.mode" />
+            </dt>
+            <dd className="text-terminal-text font-mono">{process.env.NODE_ENV}</dd>
           </div>
           <div>
-            <dt className="text-terminal-muted">Database</dt>
+            <dt className="text-terminal-muted">
+              <T k="settings.database" />
+            </dt>
             <dd className="text-terminal-text font-mono">PostgreSQL</dd>
           </div>
         </dl>
-      </div>
-    </div>
-  );
-}
-
-function ProviderStatus({
-  name,
-  description,
-  status,
-  details,
-}: {
-  name: string;
-  description: string;
-  status: 'active' | 'inactive' | 'error';
-  details: string;
-}) {
-  const statusColors = {
-    active: 'bg-success-dot',
-    inactive: 'bg-gray-500',
-    error: 'bg-danger-dot',
-  };
-
-  const statusText = {
-    active: 'Active',
-    inactive: 'Inactive',
-    error: 'Error',
-  };
-
-  return (
-    <div className="flex items-center justify-between p-3 bg-terminal-bg rounded-md border border-terminal-border">
-      <div>
-        <p className="text-terminal-text font-medium">{name}</p>
-        <p className="text-sm text-terminal-muted">{description}</p>
-      </div>
-      <div className="text-right">
-        <div className="flex items-center gap-2 text-sm">
-          <span className={`w-2 h-2 rounded-full ${statusColors[status]}`} />
-          <span className="text-terminal-text">{statusText[status]}</span>
-        </div>
-        <p className="text-xs text-terminal-muted mt-1">{details}</p>
       </div>
     </div>
   );
@@ -137,7 +113,7 @@ function RunUpdateButton() {
   return (
     <form action="/api/cron/run" method="POST">
       <button type="submit" className="btn btn-secondary text-sm">
-        Run Update Now
+        <T k="settings.runUpdateNow" />
       </button>
     </form>
   );

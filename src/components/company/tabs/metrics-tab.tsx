@@ -14,6 +14,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { useTranslation } from '@/components/language-provider';
 
 interface MetricsTabProps {
   metrics: MetricsAnnual[];
@@ -148,13 +149,14 @@ const CHART_EXPLANATIONS: Record<string, {
 };
 
 export function MetricsTab({ metrics, prices, financials }: MetricsTabProps) {
+  const { t } = useTranslation();
   const [chartType, setChartType] = useState<ChartType>('profitability');
   const [priceRange, setPriceRange] = useState<PriceRange>('1y');
 
   if (metrics.length === 0 && prices.length === 0) {
     return (
       <div className="card text-center py-12">
-        <p className="text-terminal-muted">No metrics data available yet.</p>
+        <p className="text-terminal-muted">{t('metrics.noData')}</p>
       </div>
     );
   }
@@ -468,12 +470,12 @@ export function MetricsTab({ metrics, prices, financials }: MetricsTabProps) {
       {/* Metrics Table */}
       {metrics.length > 0 && chartType !== 'price' && (
         <div className="card">
-          <h3 className="card-header">Historical Data</h3>
+          <h3 className="card-header">{t('metrics.historicalData')}</h3>
           <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Year</th>
+                  <th>{t('metrics.year')}</th>
                   {currentConfig.lines.map((line) => (
                     <th key={line.key} className="text-right">
                       {line.name}
