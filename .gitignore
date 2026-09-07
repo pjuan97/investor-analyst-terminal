@@ -12,12 +12,10 @@ dist/
 # Testing
 coverage/
 
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment — catch-all so copies and backups (.env.backup-*, .env.old, …)
+# can never be staged by accident. .env.example is the one tracked exception.
+.env*
+!.env.example
 
 # Logs
 npm-debug.log*
