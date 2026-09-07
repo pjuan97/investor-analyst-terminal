@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { callClaude, isClaudeConfigured } from '@/lib/analysis/claude-client';
+import {
+  explainWith,
+  configuredProviders,
+  type ExplainProvider,
+} from '@/lib/opportunities/explain-provider';
 import {
   rankOpportunities,
   DEFAULT_HURDLE_RATE,
@@ -73,14 +77,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isClaudeConfigured()) {
+    const body = await request.json().catch(() => ({}));
+
+    const provider: ExplainProvider =
+      body.provider === 'gemini' ? 'gemini' : 'anthropic';
+
+    // Supplied by the user for this request only — never stored or logged.
+    const apiKey =
+      typeof body.apiKey === 'string' && body.apiKey.trim().length > 0
+        ? body.apiKey.trim()
+        : undefined;
+
+    const available = configuredProviders();
+    if (!apiKey && !available[provider]) {
       return NextResponse.json(
-        { error: 'ANTHROPIC_API_KEY no está configurada' },
+        {
+          error:
+            provider === 'anthropic'
+              ? 'No hay API key de Anthropic configurada. Ingresa una para continuar.'
+              : 'No hay API key de Gemini configurada. Ingresa una para continuar.',
+        },
         { status: 400 }
       );
     }
 
-    const body = await request.json().catch(() => ({}));
     const limit = Math.min(Math.max(Number(body.limit) || 8, 1), 15);
     const hurdleRate =
       Number.isFinite(Number(body.hurdleRate)) &&
@@ -157,22 +177,43 @@ export async function POST(request: NextRequest) {
       top.map(formatOpportunity).join('\n\n'),
     ].join('\n');
 
-    const explanation = await callClaude(SYSTEM_PROMPT, userMessage, {
-      webSearch: false,
+    const explanation = await explainWith(SYSTEM_PROMPT, userMessage, {
+      provider,
+      apiKey,
       maxTokens: 4000,
     });
 
     return NextResponse.json({
       success: true,
       generatedAt: new Date().toISOString(),
+      provider,
+      usedOwnKey: !!apiKey,
       explained: top.map((o) => o.ticker),
       explanation,
     });
   } catch (error) {
-    console.error('Opportunities explain error:', error);
+    // Logged without the request body: it may carry a user-supplied API key.
+    console.error(
+      'Opportunities explain error:',
+      error instanceof Error ? error.message : 'unknown'
+    );
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to explain opportunities' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'No se pudo generar la explicación',
+      },
       { status: 500 }
     );
   }
+}
+
+// Tells the UI which providers can run without the user pasting a key.
+export async function GET() {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  return NextResponse.json({ configured: configuredProviders() });
 }

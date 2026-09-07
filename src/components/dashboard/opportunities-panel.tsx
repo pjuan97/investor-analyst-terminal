@@ -5,6 +5,10 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Opportunity, OpportunityScan } from '@/lib/opportunities/types';
+import {
+  ExplainProviderDialog,
+  type ExplainChoice,
+} from './explain-provider-dialog';
 
 // ============================================================================
 // OPPORTUNITIES PANEL — deterministic triage, with optional AI narrative
@@ -113,8 +117,10 @@ export function OpportunitiesPanel() {
   const [expanded, setExpanded] = useState(false);
 
   const [explanation, setExplanation] = useState<string | null>(null);
+  const [explainedWith, setExplainedWith] = useState<string | null>(null);
   const [explaining, setExplaining] = useState(false);
   const [explainError, setExplainError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const runScan = useCallback(async () => {
     setLoading(true);
@@ -130,6 +136,7 @@ export function OpportunitiesPanel() {
       // The narrative describes the previous ranking; drop it so the two are
       // never shown out of sync.
       setExplanation(null);
+      setExplainedWith(null);
       setExplainError(null);
     } catch {
       setError('No se pudo escanear');
@@ -144,7 +151,7 @@ export function OpportunitiesPanel() {
     runScan();
   }, [runScan]);
 
-  const explain = async () => {
+  const explain = async (choice: ExplainChoice) => {
     setExplaining(true);
     setExplainError(null);
     try {
@@ -152,7 +159,12 @@ export function OpportunitiesPanel() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ limit: 8 }),
+        body: JSON.stringify({
+          limit: 8,
+          provider: choice.provider,
+          // Present only when the user pasted one; it is not kept afterwards.
+          ...(choice.apiKey ? { apiKey: choice.apiKey } : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -160,6 +172,11 @@ export function OpportunitiesPanel() {
         return;
       }
       setExplanation(data.explanation);
+      setExplainedWith(
+        `${data.provider === 'gemini' ? 'Gemini' : 'Claude'}${
+          data.usedOwnKey ? ' · tu API key' : ''
+        }`
+      );
     } catch {
       setExplainError('No se pudo generar la explicación');
     } finally {
@@ -192,7 +209,7 @@ export function OpportunitiesPanel() {
             {loading ? 'Escaneando…' : 'Reescanear'}
           </button>
           <button
-            onClick={explain}
+            onClick={() => setDialogOpen(true)}
             disabled={explaining || opportunities.length === 0}
             className="btn btn-primary text-sm py-1.5"
             title="Una sola llamada a Claude sobre el top del ranking"
@@ -259,10 +276,17 @@ export function OpportunitiesPanel() {
         <div className="alert-error rounded p-3 text-sm mt-3">{explainError}</div>
       )}
 
+      <ExplainProviderDialog
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onConfirm={explain}
+      />
+
       {explanation && (
         <div className="mt-4 pt-4 border-t border-terminal-border">
           <div className="text-xs text-terminal-muted mb-2">
-            Análisis de Claude sobre el top del ranking
+            Análisis sobre el top del ranking
+            {explainedWith ? ` · ${explainedWith}` : ''}
           </div>
           <div className="prose prose-invert prose-sm max-w-none text-terminal-text [&_h2]:text-base [&_h3]:text-sm [&_table]:text-xs">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{explanation}</ReactMarkdown>

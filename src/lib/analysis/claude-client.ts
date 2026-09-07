@@ -33,6 +33,11 @@ export interface CallClaudeOptions {
    */
   webSearch?: boolean;
   maxTokens?: number;
+  /**
+   * Use this key instead of ANTHROPIC_API_KEY for this call only. Lets the
+   * caller run against a key the user supplied at request time.
+   */
+  apiKey?: string;
 }
 
 export async function callClaude(
@@ -40,9 +45,9 @@ export async function callClaude(
   userMessage: string,
   options: CallClaudeOptions = {}
 ): Promise<string> {
-  const { webSearch = true, maxTokens = MAX_TOKENS } = options;
+  const { webSearch = true, maxTokens = MAX_TOKENS, apiKey: overrideKey } = options;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = overrideKey?.trim() || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error('ANTHROPIC_API_KEY environment variable is not set');
   }
